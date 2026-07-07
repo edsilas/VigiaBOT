@@ -1,0 +1,189 @@
+======================================================================
+ MONITORAMENTO DE SERVIDOR WINDOWS - DOCUMENTACAO SIMPLES
+======================================================================
+
+Esta ferramenta vigia o servidor a cada 5 minutos e avisa no Telegram
+quando algo da errado. Se estiver tudo bem, ela fica em silencio.
+
+ARQUIVOS:
+  Monitor.ps1                 -> o programa que faz a vigilancia
+  MonitoramentoServidor.xml   -> agenda a execucao a cada 5 minutos
+  Install-Monitor.ps1         -> instala, testa e remove
+  Preparar-Ambiente.cmd       -> libera firewall e requisitos
+
+
+======================================================================
+ 1. O QUE VOCE PRECISA CONFIGURAR (OBRIGATORIO)
+======================================================================
+
+Sao apenas DUAS informacoes: o TOKEN do bot e o CHAT ID.
+
+PASSO A - Criar o bot e pegar o TOKEN
+  1. No Telegram, abra conversa com: @BotFather
+  2. Envie:  /newbot
+  3. Defina um nome e um usuario terminando em "bot".
+  4. Copie o TOKEN (ex.: 123456789:AAExxxxxxxxxxxxxxxxxxxxxxxxx).
+
+PASSO B - Pegar o CHAT ID
+  1. Abra o seu bot, toque em Iniciar e envie qualquer mensagem.
+  2. Abra conversa com: @userinfobot e toque em Iniciar.
+  3. Copie o numero "Id" que ele mostrar. Esse e o CHAT ID.
+     (Para grupo, o ID costuma ser negativo, ex.: -1001234567890)
+
+PASSO C - Gravar TOKEN e CHAT ID (escolha UMA opcao)
+
+  OPCAO 1 (recomendada) - variavel de maquina:
+     No PowerShell como Administrador:
+       [Environment]::SetEnvironmentVariable('MONITOR_TG_TOKEN','SEU_TOKEN','Machine')
+       [Environment]::SetEnvironmentVariable('MONITOR_TG_CHATID','SEU_CHATID','Machine')
+
+  OPCAO 2 - direto no arquivo:
+     Abra Monitor.ps1 no Bloco de Notas e troque os textos:
+       'SUBSTITUA_PELO_SEU_TOKEN_DO_BOTFATHER'  -> seu token
+       'SUBSTITUA_PELO_SEU_CHAT_ID'             -> seu chat id
+
+INSTALAR E TESTAR (PowerShell como Administrador):
+   cd C:\Monitoramento
+   .\Preparar-Ambiente.cmd       (libera firewall e requisitos)
+   .\Install-Monitor.ps1 -Install
+   .\Install-Monitor.ps1 -Test   (deve chegar mensagem no Telegram)
+
+
+======================================================================
+ 2. CONFIGURACOES OPCIONAIS (ajuste se precisar)
+======================================================================
+
+Ficam no inicio do arquivo Monitor.ps1. Edite e salve; a proxima
+ronda (ate 5 min) ja usa os novos valores. NAO precisa reinstalar.
+
+  CpuThreshold        80     alerta quando CPU passa de 80%
+  CpuSustainMinutes   5      por quantos minutos a CPU precisa ficar alta
+  RamThreshold        80     alerta quando RAM passa de 80%
+  DiskThreshold       90     alerta quando disco passa de 90% cheio
+  ProcCpuThreshold    70     alerta processo usando mais de 70% de CPU
+  ProcMemThresholdMB  2048   alerta processo usando mais de 2 GB de RAM
+  AlertCooldownMin    30     nao repete o mesmo aviso antes de 30 min
+  CriticalServices    lista de servicos importantes a vigiar
+  DbServicePrefixes   tipos de banco a vigiar (MSSQL, MySQL, etc.)
+  MonitorAutoStopped  $true  vigiar todos os servicos automaticos parados
+  MaxAutoStoppedAlerts 10    maximo de avisos de servico por ciclo
+
+Exemplo (servidor com SQL Server e site IIS):
+  CriticalServices = @('MSSQLSERVER','W3SVC','Spooler')
+
+
+======================================================================
+ 3. O QUE O SISTEMA REALMENTE FAZ
+======================================================================
+
+A cada 5 minutos ele verifica e, se houver problema, manda UM aviso no
+Telegram (com servidor, hora, item afetado, valor, gravidade e o que fazer):
+
+  - CPU acima de 80% por mais de 5 minutos seguidos
+  - Memoria RAM acima de 80%
+  - Disco acima de 90% cheio (qualquer unidade)
+  - Rede sem adaptador com conexao/gateway ativo
+  - Servico importante parado (ou servico automatico parado)
+  - Erros criticos registrados no Windows
+  - Programas travados (sem resposta)
+  - Reinicializacao inesperada do servidor
+  - Tela azul (BSOD)
+  - Falha de Backup
+  - Falha do Windows Update
+  - Falha de Banco de Dados (servico do banco caiu)
+  - Processo consumindo CPU ou memoria em excesso
+
+COMO ELE SE COMPORTA:
+  - SILENCIO = tudo certo. So chega mensagem quando ha problema.
+  - NAO repete o mesmo aviso antes de 30 minutos (evita spam).
+  - Se a internet falhar, tenta enviar de novo (3 vezes).
+  - Guarda um historico em: C:\Monitoramento\logs\monitor.log
+  - Funciona mesmo sem ninguem logado no servidor.
+  - Se uma verificacao falhar, as outras continuam normalmente.
+
+O QUE ELE NAO FAZ:
+  - Nao gera relatorio em PDF/planilha (a entrega e por alerta + log).
+  - Nao reinicia servicos nem altera o sistema (so observa e avisa).
+  - Nao manda mensagem de "tudo ok" periodica (silencio = normal).
+
+
+======================================================================
+ 4. CENARIOS DE ERRO E SOLUCOES
+======================================================================
+
+ERRO: Nao chega nenhuma mensagem no Telegram.
+CAUSA/SOLUCAO:
+  - Token ou Chat ID errado. Refaca a SECAO 1.
+  - Voce nao iniciou o bot. Abra o bot e toque em Iniciar.
+  - Rode o teste para ver o diagnostico:
+      .\Install-Monitor.ps1 -Test
+
+ERRO: Teste mostra "Config Telegram: INVALIDA".
+CAUSA/SOLUCAO:
+  - Token incompleto ou ainda com o texto "SUBSTITUA".
+  - Confira se copiou o token inteiro, com os dois pontos no meio.
+
+ERRO: Teste mostra "Internet/Conectividade: FALHOU".
+CAUSA/SOLUCAO:
+  - Servidor sem saida para api.telegram.org na porta 443.
+  - Rode o Preparar-Ambiente.cmd (libera o firewall local).
+  - Se ainda falhar, o bloqueio esta no firewall de borda ou proxy
+    da rede. Peca para a equipe de rede liberar api.telegram.org:443.
+
+ERRO: "execucao de scripts esta desabilitada neste sistema".
+CAUSA/SOLUCAO:
+  - Politica de execucao do PowerShell. Para testes manuais use:
+      powershell -ExecutionPolicy Bypass -File "C:\Monitoramento\Monitor.ps1" -Test
+  - A tarefa agendada ja roda com Bypass, entao nao afeta o automatico.
+  - Se houver bloqueio por GPO da empresa, fale com a equipe de TI
+    (pode ser preciso assinar o script ou liberar por politica).
+
+ERRO: "Execute como Administrador" / acesso negado.
+CAUSA/SOLUCAO:
+  - Abra o PowerShell ou o .cmd com botao direito > Executar como
+    administrador.
+
+ERRO: A tarefa nao aparece / nao executa.
+CAUSA/SOLUCAO:
+  - Verifique no Agendador de Tarefas o item "MonitoramentoServidor".
+  - Reinstale:  .\Install-Monitor.ps1 -Install
+  - Para rodar na hora:  schtasks /Run /TN "MonitoramentoServidor"
+
+ERRO: Recebo avisos demais (muito barulho).
+CAUSA/SOLUCAO:
+  - Limiares baixos para o seu ambiente. Aumente na SECAO 2.
+  - Muitos servicos automaticos parados sendo reportados:
+    coloque MonitorAutoStopped = $false, ou reduza MaxAutoStoppedAlerts,
+    ou adicione o nome do servico em IgnoreServicesRegex.
+
+ERRO: Avisa "REDE_DOWN" mas a rede esta ok.
+CAUSA/SOLUCAO:
+  - Pode ocorrer em servidores so com placas virtuais. Confirme o
+    gateway. Se for falso positivo recorrente, avise para revisarmos
+    os criterios de rede.
+
+ERRO: Token/Chat ID configurados, mas a tarefa nao envia.
+CAUSA/SOLUCAO:
+  - Se usou a OPCAO 1 (variavel de maquina), a tarefa pode precisar que
+    o servidor seja reiniciado (ou o servico Agendador de Tarefas
+    reiniciado) para enxergar as variaveis novas.
+
+ERRO: Mensagem chega cortada com "(mensagem truncada)".
+CAUSA/SOLUCAO:
+  - Normal quando ha muitos alertas de uma vez (limite do Telegram).
+  - Veja o detalhe completo no log: C:\Monitoramento\logs\monitor.log
+
+
+======================================================================
+ 5. COMANDOS UTEIS (cola rapida)
+======================================================================
+
+  Instalar:        .\Install-Monitor.ps1 -Install
+  Testar envio:    .\Install-Monitor.ps1 -Test
+  Rodar agora:     schtasks /Run /TN "MonitoramentoServidor"
+  Remover:         .\Install-Monitor.ps1 -Uninstall
+  Ver historico:   abra C:\Monitoramento\logs\monitor.log
+
+======================================================================
+ FIM
+======================================================================

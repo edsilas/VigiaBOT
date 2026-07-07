@@ -1,0 +1,49 @@
+# ==========================================================
+# VigiaBOT - .gitignore
+# ==========================================================
+
+# --- Segredos e configuracao gerada em runtime ---
+# O MonitorConfig.json pode conter o token do Telegram e o Chat ID
+# quando o modo "Arquivo de configuracao" e utilizado. NUNCA versionar.
+MonitorConfig.json
+**/MonitorConfig.json
+*.secret
+*.secrets
+
+# --- Estado e logs gerados pelo agente ---
+MonitorState.json
+**/MonitorState.json
+*.log
+logs/
+Monitoramento.log
+Bot.log
+
+# --- Backups criados pelo Launcher ao editar arquivos ---
+*.bak
+*.bak.*
+
+# --- Artefatos temporarios ---
+*.tmp
+*.temp
+~$*
+
+# --- Sistema operacional ---
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+
+# --- Editores / IDEs ---
+.vs/
+.vscode/
+*.suo
+*.user
+*.code-workspace
+.idea/
+
+# --- Pacotes / distribuicao ---
+*.zip
+dist/
+build/
+out/

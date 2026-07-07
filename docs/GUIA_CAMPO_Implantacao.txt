@@ -1,0 +1,235 @@
+======================================================================
+ GUIA DE CAMPO - IMPLANTACAO DO MONITORAMENTO DE SERVIDOR WINDOWS
+ Alertas via Telegram | Execucao a cada 5 minutos
+======================================================================
+
+ARQUIVOS NECESSARIOS
+- Monitor.ps1
+- MonitoramentoServidor.xml
+- Install-Monitor.ps1
+
+PASTA PADRAO DE INSTALACAO: C:\Monitoramento
+TEMPO ESTIMADO: 15 minutos
+REQUER: acesso de Administrador no servidor
+
+
+----------------------------------------------------------------------
+ PRE-REQUISITOS (confira antes de ir a campo)
+----------------------------------------------------------------------
+[ ] Windows Server 2012 R2/2016/2019/2022 ou Windows 10/11
+[ ] Conta com privilegio de Administrador
+[ ] Servidor com acesso de saida a api.telegram.org (porta 443/HTTPS)
+[ ] Telegram instalado no celular/PC do operador
+[ ] Token do bot e Chat ID em maos (ver SECAO 1 e 2)
+
+
+----------------------------------------------------------------------
+ SECAO 1 - CRIAR O BOT E OBTER O TOKEN
+----------------------------------------------------------------------
+1. No Telegram, abrir conversa com: @BotFather
+2. Enviar: /newbot
+3. Informar um nome (ex.: Vigia do Servidor)
+4. Informar um usuario terminando em "bot" (ex.: vigia_srv01_bot)
+5. Copiar o TOKEN retornado. Formato:
+   123456789:AAExxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+   GUARDAR. O token e a senha do bot. Nao divulgar.
+
+
+----------------------------------------------------------------------
+ SECAO 2 - OBTER O CHAT ID
+----------------------------------------------------------------------
+ENVIO PARTICULAR (uma pessoa):
+1. Abrir o proprio bot e tocar em Iniciar; enviar qualquer mensagem.
+2. Abrir conversa com @userinfobot e tocar em Iniciar.
+3. Anotar o numero "Id" retornado. Esse e o CHAT ID. Ex.: 987654321
+
+ENVIO PARA GRUPO (equipe - recomendado):
+1. Criar um grupo e adicionar o bot a ele.
+2. Adicionar @userinfobot ao grupo para ler o ID do grupo.
+3. O Chat ID de grupo costuma ser negativo. Ex.: -1001234567890
+4. Remover o @userinfobot do grupo apos obter o ID.
+
+
+----------------------------------------------------------------------
+ SECAO 3 - COPIAR ARQUIVOS PARA O SERVIDOR
+----------------------------------------------------------------------
+1. Criar a pasta:           C:\Monitoramento
+2. Copiar para dentro dela:
+   C:\Monitoramento\Monitor.ps1
+   C:\Monitoramento\MonitoramentoServidor.xml
+   C:\Monitoramento\Install-Monitor.ps1
+
+
+----------------------------------------------------------------------
+ SECAO 4 - ABRIR O POWERSHELL COMO ADMINISTRADOR
+----------------------------------------------------------------------
+1. Menu Iniciar -> digitar: PowerShell
+2. Botao direito em "Windows PowerShell" -> Executar como administrador
+3. Ir ate a pasta:
+   cd C:\Monitoramento
+
+
+----------------------------------------------------------------------
+ SECAO 5 - CONFIGURAR TOKEN E CHAT ID (escolher UMA opcao)
+----------------------------------------------------------------------
+OPCAO A (recomendada - variavel de maquina, nao grava no script):
+   [Environment]::SetEnvironmentVariable('MONITOR_TG_TOKEN','SEU_TOKEN','Machine')
+   [Environment]::SetEnvironmentVariable('MONITOR_TG_CHATID','SEU_CHATID','Machine')
+
+OPCAO B (simples - editar o arquivo):
+   1. Abrir C:\Monitoramento\Monitor.ps1 no Bloco de Notas.
+   2. Localizar as linhas:
+        TelegramToken  = ... 'SUBSTITUA_PELO_SEU_TOKEN_DO_BOTFATHER'
+        TelegramChatId = ... 'SUBSTITUA_PELO_SEU_CHAT_ID'
+   3. Substituir pelos valores reais (manter as aspas) e salvar.
+
+
+----------------------------------------------------------------------
+ SECAO 6 - INSTALAR (cria a tarefa agendada)
+----------------------------------------------------------------------
+Executar:
+   cd C:\Monitoramento
+   .\Install-Monitor.ps1 -Install
+
+Resultado esperado: mensagem "Tarefa registrada".
+A tarefa roda como SYSTEM, a cada 5 minutos, com privilegios maximos,
+mesmo sem usuario logado, e reinicia ate 3x em caso de falha.
+
+ALTERNATIVA SEM O INSTALADOR (somente comando do Windows):
+   schtasks /Create /TN "MonitoramentoServidor" /XML "C:\Monitoramento\MonitoramentoServidor.xml" /RU "SYSTEM" /F
+
+
+----------------------------------------------------------------------
+ SECAO 7 - TESTAR
+----------------------------------------------------------------------
+Executar:
+   .\Install-Monitor.ps1 -Test
+
+Verificar na tela:
+   Internet: OK
+   Config Telegram: VALIDA
+   Envio de teste: ENVIADO
+
+Verificar no Telegram: deve chegar a mensagem de teste.
+
+Forcar uma ronda completa imediata (sem esperar 5 min):
+   schtasks /Run /TN "MonitoramentoServidor"
+
+
+----------------------------------------------------------------------
+ SECAO 8 - VALIDACAO FINAL (checklist de aceite)
+----------------------------------------------------------------------
+[ ] Mensagem de teste chegou no Telegram
+[ ] Tarefa "MonitoramentoServidor" aparece no Agendador de Tarefas
+[ ] Status da tarefa = Pronto
+[ ] Arquivo de log criado em C:\Monitoramento\logs\monitor.log
+[ ] Token/Chat ID configurados (Opcao A ou B)
+[ ] Limiares e servicos criticos ajustados ao ambiente (SECAO 9)
+
+
+----------------------------------------------------------------------
+ SECAO 9 - AJUSTES POR AMBIENTE (arquivo Monitor.ps1)
+----------------------------------------------------------------------
+Editar o bloco de configuracao no inicio do arquivo. Principais campos:
+
+   CpuThreshold        80     % CPU que dispara alerta
+   CpuSustainMinutes   5      minutos de CPU alta antes de alertar
+   RamThreshold        80     % RAM
+   DiskThreshold       90     % disco cheio por volume
+   ProcCpuThreshold    70     % CPU de um unico processo
+   ProcMemThresholdMB  2048   memoria de um unico processo (MB)
+   AlertCooldownMin    30     minutos para nao repetir o mesmo alerta
+   CriticalServices    lista de servicos criticos a vigiar
+   DbServicePrefixes   prefixos de servicos de banco a vigiar
+
+Exemplo (servidor SQL Server + IIS):
+   CriticalServices = @('MSSQLSERVER','W3SVC','Spooler')
+
+Observacao: apos editar, NAO reinstalar. A proxima ronda (ate 5 min)
+ja usa a nova configuracao.
+
+
+----------------------------------------------------------------------
+ SECAO 10 - O QUE A FERRAMENTA MONITORA
+----------------------------------------------------------------------
+- CPU total (>=80% por >=5 min)
+- RAM total (>=80%)
+- Disco por volume (>=90%)
+- Rede (nenhum adaptador conectado)
+- Servicos criticos parados e servicos automaticos parados
+- Eventos criticos do Windows (nivel Critico e Erro)
+- Processos travados (sem resposta)
+- Reinicializacoes inesperadas (EventID 41/6008)
+- Tela azul / BSOD (EventID 1001 e minidump)
+- Falha de Backup
+- Falha de Windows Update
+- Falha de Banco de Dados (servico parado)
+- Processo consumindo CPU excessiva
+- Processo consumindo memoria excessiva
+
+
+----------------------------------------------------------------------
+ SECAO 11 - O QUE A FERRAMENTA ENTREGA
+----------------------------------------------------------------------
+1. ALERTA no Telegram em tempo real, contendo por ocorrencia:
+   - Nome do servidor
+   - Data e hora
+   - Item/processo afetado
+   - Valor detectado
+   - Nivel de criticidade (Critico/Alto/Medio/Baixo)
+   - Recomendacao tecnica
+
+2. LOG local em C:\Monitoramento\logs\monitor.log
+   (rotacao automatica: limite 5 MB, mantem 7 arquivos)
+
+3. AVISO de "FALHA NO MONITORAMENTO" caso o proprio vigia falhe.
+
+Observacao: a ferramenta NAO gera relatorio em PDF/planilha.
+A entrega e por alerta em tempo real + log local.
+
+
+----------------------------------------------------------------------
+ SECAO 12 - OPERACAO E DIAGNOSTICO
+----------------------------------------------------------------------
+Ver historico:        abrir C:\Monitoramento\logs\monitor.log
+Rodar manualmente:    schtasks /Run /TN "MonitoramentoServidor"
+Conferir a tarefa:    Agendador de Tarefas -> MonitoramentoServidor
+
+Problemas comuns:
+- Nao chega mensagem        -> Token/Chat ID errado; refazer SECAO 1,2,5
+- "Config Telegram INVALIDA"-> Token incompleto ou ainda com SUBSTITUA
+- "Internet: FALHOU"        -> liberar saida HTTPS para api.telegram.org
+- So chega apos mandar msg  -> abrir o bot e tocar em Iniciar
+- "execucao de scripts desativada" -> usar -ExecutionPolicy Bypass
+- Sem permissao p/ instalar -> abrir PowerShell como Administrador
+- Avisos em excesso         -> elevar limiares na SECAO 9
+
+
+----------------------------------------------------------------------
+ SECAO 13 - REMOCAO / ROLLBACK
+----------------------------------------------------------------------
+Remover a tarefa (para a vigilancia):
+   cd C:\Monitoramento
+   .\Install-Monitor.ps1 -Uninstall
+
+Ou somente com comando do Windows:
+   schtasks /Delete /TN "MonitoramentoServidor" /F
+
+Opcional: apagar a pasta C:\Monitoramento manualmente.
+
+
+----------------------------------------------------------------------
+ RESUMO DE COMANDOS (cola rapida)
+----------------------------------------------------------------------
+INSTALAR:   .\Install-Monitor.ps1 -Install
+TESTAR:     .\Install-Monitor.ps1 -Test
+RODAR JA:   schtasks /Run /TN "MonitoramentoServidor"
+REMOVER:    .\Install-Monitor.ps1 -Uninstall
+
+TOKEN/ID:
+  [Environment]::SetEnvironmentVariable('MONITOR_TG_TOKEN','SEU_TOKEN','Machine')
+  [Environment]::SetEnvironmentVariable('MONITOR_TG_CHATID','SEU_CHATID','Machine')
+
+======================================================================
+ FIM DO GUIA DE CAMPO
+======================================================================
