@@ -120,27 +120,31 @@ assistente nunca precisa editar o código do agente — ele apenas grava esse
 arquivo. O resultado é compatibilidade total e atualizações seguras.
 
 ```
-                       +----------------------------+
-                       |   MonitorConfig.json       |
-    Launcher grava --> |  (limiares + segredos)     | <-- lido em tempo de execução
-                       +----------------------------+
-                          ^                     ^
-              a cada 5min |                     | ao iniciar
-                    +-----------+         +---------------+
-                    | Monitor   |         | Monitor-Bot   |
-                    |  .ps1     |         |    .ps1       |
-                    +-----------+         +---------------+
-                          |                      ^
-                    alerta| (HTTPS 443)  comandos| (/status, /log...)
-                          v                      |
-                    +------------------------------------+
-                    |          api.telegram.org          |
-                    +------------------------------------+
-                          |                      |
-                          v                      v
-                    +------------------------------------+
-                    |        Seu Telegram (celular)      |
-                    +------------------------------------+
+  ┌────────────┐          ┌────────────────────────────────┐
+  │  Launcher  │─ grava ─▶│       MonitorConfig.json       │
+  └────────────┘          │      limiares + segredos       │
+                          └────────────────────────────────┘
+                                 │                   │
+                   ┌─────────────┘                   └───────────┐
+                   ▼                                             ▼
+          leitura em runtime                            leitura ao iniciar
+      ┌────────────────────────┐                    ┌────────────────────────┐
+      │      Monitor.ps1       │                    │    Monitor-Bot.ps1     │
+      │ verifica a cada 5 min  │                    │     lê ao iniciar      │
+      └────────────────────────┘                    └────────────────────────┘
+                   │                                             ▲
+                   │ alerta · HTTPS 443    comandos /status /log │
+                   ▼                                             │
+                ┌──────────────────────────────────────────────────┐
+                │                 api.telegram.org                 │
+                └──────────────────────────────────────────────────┘
+                                          │
+                                          │ mensagens
+                                          ▼
+                            ┌────────────────────────────┐
+                            │        Seu Telegram        │
+                            │          celular           │
+                            └────────────────────────────┘
 ```
 
 ### Fluxo de funcionamento
