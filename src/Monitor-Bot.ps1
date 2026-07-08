@@ -40,6 +40,80 @@ $Config = [ordered]@{
     StateFile      = "$PSScriptRoot\bot-state.json"
 }
 
+# ======================================================================
+# OVERRIDE EXTERNO (MonitorConfig.json) - mesma fonte usada pelo Monitor.ps1
+# Compatibilidade preservada: a variavel de ambiente MONITOR_TG_TOKEN e os
+# valores inline continuam funcionando. Quando o MonitorConfig.json existe,
+# ele tem prioridade (igual ao Monitor.ps1), permitindo que o bot funcione
+# no modo "Arquivo de configuracao" do assistente, sem depender de reboot.
+# ======================================================================
+$ConfigJsonPath = Join-Path $PSScriptRoot 'MonitorConfig.json'
+$ext = $null
+if (Test-Path $ConfigJsonPath) {
+    try   { $ext = Get-Content $ConfigJsonPath -Raw -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop }
+    catch { $ext = $null }
+}
+
+# --- Token: JSON > variavel de ambiente > inline (espelha o Monitor.ps1) ---
+if ($ext -and $ext.PSObject.Properties['TelegramToken']) {
+    $tk = "$($ext.TelegramToken)".Trim()
+    if ($tk) { $Config.TelegramToken = $tk }
+}
+
+# --- Chat IDs autorizados: UNIAO (nunca remove IDs ja configurados) ---
+$ids = New-Object System.Collections.Generic.List[string]
+foreach ($id in @($Config.AllowedChatIds)) { if ($id) { [void]$ids.Add("$id") } }
+if ($ext) {
+    if ($ext.PSObject.Properties['AllowedChatIds']) {
+        foreach ($id in @($ext.AllowedChatIds)) { if ($id) { [void]$ids.Add("$id") } }
+    }
+    if ($ext.PSObject.Properties['TelegramChatId']) {
+        $cid = "$($ext.TelegramChatId)".Trim()
+        if ($cid) { [void]$ids.Add($cid) }
+    }
+}
+if ($env:MONITOR_TG_CHATID) { [void]$ids.Add("$($env:MONITOR_TG_CHATID)".Trim()) }
+$seen  = @{}
+$clean = @()
+foreach ($id in $ids) {
+    $t = $id.Trim()
+    if (-not $t) { continue }
+    if ($t -match 'COLOQUE_SEU|SUBSTITUA') { continue }   # ignora marcadores de exemplo
+    if (-not $seen.ContainsKey($t)) { $seen[$t] = $true; $clean += $t }
+}
+if ($clean.Count -gt 0) { $Config.AllowedChatIds = $clean }
+
+# --- Servicos criticos: alinha com o Monitor.ps1 quando definido no JSON ---
+if ($ext -and $ext.PSObject.Properties['CriticalServices']) {
+    $cs = @($ext.CriticalServices | Where-Object { $_ })
+    if ($cs.Count -gt 0) { $Config.CriticalServices = $cs }
+}
+
+# --- Nome da tarefa disparada por /check ---
+if ($ext -and $ext.PSObject.Properties['TaskName']) {
+    $tn = "$($ext.TaskName)".Trim()
+    if ($tn) { $Config.TaskName = $tn }
+}
+
+# --- Caminho do log do monitor lido por /log (robusto ao diretorio de instalacao) ---
+$logCandidates = @()
+if ($ext -and $ext.PSObject.Properties['LogDir']) {
+    $ld = "$($ext.LogDir)".Trim()
+    if ($ld) { $logCandidates += (Join-Path $ld 'monitor.log') }
+}
+$logCandidates += $Config.MonitorLog                                       # valor atual (compatibilidade)
+$logCandidates += (Join-Path (Join-Path $PSScriptRoot 'logs') 'monitor.log')
+$resolvedLog = $null
+foreach ($c in $logCandidates) { if ($c -and (Test-Path $c)) { $resolvedLog = $c; break } }
+if (-not $resolvedLog) {
+    if ($ext -and $ext.PSObject.Properties['LogDir'] -and "$($ext.LogDir)".Trim()) {
+        $resolvedLog = Join-Path ("$($ext.LogDir)".Trim()) 'monitor.log'
+    } else {
+        $resolvedLog = Join-Path (Join-Path $PSScriptRoot 'logs') 'monitor.log'
+    }
+}
+$Config.MonitorLog = $resolvedLog
+
 $script:Token    = $Config.TelegramToken
 $script:LogFile  = Join-Path $Config.LogDir 'bot.log'
 $script:Server   = $env:COMPUTERNAME
@@ -79,15 +153,27 @@ function Get-HtmlSafe { param([string]$Text)
 function Send-Reply {
     param([string]$ChatId, [string]$Text)
     $uri  = "https://api.telegram.org/bot$script:Token/sendMessage"
-    $body = @{ chat_id = $ChatId; text = $Text; parse_mode = 'HTML'; disable_web_page_preview = $true }
     for ($i=1; $i -le 3; $i++) {
         try {
+            $body = @{ chat_id = $ChatId; text = $Text; parse_mode = 'HTML'; disable_web_page_preview = $true }
             $r = Invoke-RestMethod -Uri $uri -Method Post -Body $body -TimeoutSec 20 -ErrorAction Stop
             if ($r.ok) { return $true }
+            else { Write-BotLog ("Telegram recusou a mensagem (tentativa {0}): {1}" -f $i, $r.description) 'WARN' }
         } catch {
             Write-BotLog "Falha ao responder (tentativa $i): $($_.Exception.Message)" 'WARN'
             Start-Sleep -Seconds ([math]::Min(10, $i*2))
         }
+    }
+    # Fallback: se o envio em HTML falhar, entrega em texto simples para nao
+    # perder a resposta (remove as tags e desfaz o escape basico).
+    try {
+        $plain = [regex]::Replace($Text, '<[^>]+>', '')
+        $plain = $plain.Replace('&lt;','<').Replace('&gt;','>').Replace('&amp;','&')
+        $body2 = @{ chat_id = $ChatId; text = $plain; disable_web_page_preview = $true }
+        $r2 = Invoke-RestMethod -Uri $uri -Method Post -Body $body2 -TimeoutSec 20 -ErrorAction Stop
+        if ($r2.ok) { Write-BotLog 'Resposta entregue em texto simples (fallback).' 'WARN'; return $true }
+    } catch {
+        Write-BotLog "Falha no fallback de texto simples: $($_.Exception.Message)" 'WARN'
     }
     return $false
 }
@@ -216,11 +302,13 @@ if (-not $mutex.WaitOne(0)) {
 }
 
 if (-not (Test-TokenOk)) {
-    Write-BotLog 'Token do Telegram ausente/invalido. Configure MONITOR_TG_TOKEN.' 'ERROR'
+    Write-BotLog 'Token do Telegram ausente/invalido. Defina em MonitorConfig.json (TelegramToken) ou na variavel de maquina MONITOR_TG_TOKEN.' 'ERROR'
     exit 1
 }
 
 Write-BotLog "Bot iniciado em $script:Server. IDs autorizados: $($Config.AllowedChatIds -join ', ')"
+$cfgSrc = if ($ext) { "MonitorConfig.json ($ConfigJsonPath)" } elseif ($env:MONITOR_TG_TOKEN) { 'variavel de ambiente' } else { 'valores inline' }
+Write-BotLog "Config: $cfgSrc | log do monitor: $($Config.MonitorLog)"
 
 $offset = Get-Offset
 if ($null -eq $offset) {

@@ -1,11 +1,11 @@
 <div align="center">
 
-#  VigiaBOT
+# 🛡️ VigiaBOT
 
 **Monitoramento inteligente de servidores Windows com alertas via Telegram e assistente interativo de implantação.**
 
 [![Licença](https://img.shields.io/badge/licen%C3%A7a-Apache%202.0-blue.svg)](LICENSE)
-[![Versão](https://img.shields.io/badge/vers%C3%A3o-1.0.0-green.svg)](CHANGELOG.md)
+[![Versão](https://img.shields.io/badge/vers%C3%A3o-1.0.1-green.svg)](CHANGELOG.md)
 [![PowerShell](https://img.shields.io/badge/PowerShell-5.1%20%7C%207-5391FE.svg)](#requisitos)
 [![Plataforma](https://img.shields.io/badge/Windows-Server%202012R2%2B%20%7C%2010%2F11-0078D6.svg)](#requisitos)
 
@@ -13,7 +13,7 @@
 
 ---
 
-##  Sumário
+## 📑 Sumário
 
 - [Apresentação](#-apresentação)
 - [Visão geral](#-visão-geral)
@@ -36,7 +36,7 @@
 
 ---
 
-##  Apresentação
+## 🎯 Apresentação
 
 O **VigiaBOT** é uma solução de monitoramento para servidores **Windows** que
 observa continuamente a saúde da máquina — CPU, memória, disco, rede, serviços,
@@ -55,7 +55,7 @@ ao mínimo a intervenção manual e as chances de erro.
 
 ---
 
-##  Visão geral
+## 🔭 Visão geral
 
 O VigiaBOT roda como uma **tarefa agendada na conta `SYSTEM`**, executando a cada
 5 minutos. A cada ciclo ele coleta métricas, compara com limiares configuráveis e
@@ -77,7 +77,7 @@ comportamento **sem editar código**, preservando a integridade do agente.
 
 ---
 
-##  Principais funcionalidades
+## ✨ Principais funcionalidades
 
 ### Monitoramento
 - **CPU** com detecção de uso sustentado acima do limiar (evita falsos positivos por picos).
@@ -106,7 +106,7 @@ comportamento **sem editar código**, preservando a integridade do agente.
 
 ---
 
-##  Objetivos do projeto
+## 🎯 Objetivos do projeto
 
 - **Simplicidade de implantação**: instalar em um servidor novo deve levar minutos, não horas.
 - **Confiabilidade**: alertas relevantes, sem ruído, com estado persistente e cooldown.
@@ -117,7 +117,7 @@ comportamento **sem editar código**, preservando a integridade do agente.
 
 ---
 
-##  Recursos disponíveis
+## 📦 Recursos disponíveis
 
 - Agente de monitoramento completo e independente de idioma do SO.
 - Bot de comandos de consulta para o Telegram (opcional).
@@ -129,7 +129,7 @@ comportamento **sem editar código**, preservando a integridade do agente.
 
 ---
 
-##  Requisitos
+## 🧰 Requisitos
 
 | Item | Requisito |
 |------|-----------|
@@ -145,7 +145,7 @@ comportamento **sem editar código**, preservando a integridade do agente.
 
 ---
 
-##  Instalação
+## 🚀 Instalação
 
 ### Opção recomendada — Assistente (Launcher)
 
@@ -153,7 +153,7 @@ comportamento **sem editar código**, preservando a integridade do agente.
    arquivos da pasta [`src/`](src/) **juntos, no mesmo diretório**, no servidor.
 
    ```bash
-   git clone https://github.com/Edsilas/VigiaBOT.git
+   git clone https://github.com/edsilas/VigiaBOT.git
    ```
 
 2. Entre na pasta `src/` e **dê duplo-clique** em **`INICIAR-Assistente.cmd`**.
@@ -181,7 +181,7 @@ Para remover:
 
 ---
 
-##  Configuração
+## ⚙️ Configuração
 
 ### Onde ficam os parâmetros
 
@@ -236,7 +236,7 @@ Exemplo de `MonitorConfig.json`:
 
 ---
 
-##  Guia de utilização
+## 📖 Guia de utilização
 
 ### Menu do assistente
 
@@ -286,7 +286,7 @@ Documentação detalhada em [`docs/`](docs/):
 
 ---
 
-##  Estrutura do projeto
+## 🗂️ Estrutura do projeto
 
 ```
 VigiaBOT/
@@ -320,64 +320,35 @@ VigiaBOT/
 
 ---
 
-##  Arquitetura da solução
+## 🏛️ Arquitetura da solução
 
 ```
-          ┌──────────────────────────────────────────────────────────────────────────────────────────────┐
-          │                                  Fluxo de Implantação                                        │
-          └──────────────────────────────────────────────────────────────────────────────────────────────┘
-
-                                        ┌──────────────────────────────┐
-                                        │      INICIAR Assistente      │
-                                        └──────────────┬───────────────┘
-                                                       │
-                                             Duplo clique / UAC
-                                                       │
-                                                       ▼
-                                        ┌──────────────────────────────┐
-                                        │ Launcher-Monitoramento.ps1   │
-                                        │ Assistente de Implantação    │
-                                        └───────┬──────────┬───────────┘
-                                                │          │
-                           Grava / Mescla       │          │ Validação
-                              Configuração      │          │ Token + Chat ID
-                                                │          │
-                                                ▼          ▼
-                               ┌─────────────────────┐   ┌──────────────────────────┐
-                               │ MonitorConfig.json  │   │ api.telegram.org (HTTPS) │
-                               │ Configuração Final  │   │ getMe / getUpdates       │
-                               └──────────┬──────────┘   └──────────────┬───────────┘
-                                          │                             │
-                                          │                             │
-                                          │                     Alertas │
-                                          │                    Comandos │
-                                          │                             │
-                                          ▼                             ▼
-                         ┌────────────────────────────────────────────────────────────┐
-                         │                    Monitor.ps1                             │
-                         │           Agente Principal (Execução 5 min)                │
-                         └───────────────┬───────────────────────────────┬────────────┘
-                                         │                               │
-                                         │ Estado                        │ Bot (Opcional)
-                                         ▼                               ▼
-                      ┌────────────────────────────┐     ┌────────────────────────────┐
-                      │   MonitorState.json        │     │      Monitor-Bot.ps1       │
-                      │ CPU • Boot • Cooldown      │     │ Long Poll (getUpdates)     │
-                      └────────────────────────────┘     └──────────────┬─────────────┘
-                                                                        │
-                                                                        │
-                                         ┌──────────────────────────────┘
-                                         ▼
-                           ┌────────────────────────────────────┐
-                           │     Install-Monitor.ps1            │
-                           │ Registro da Tarefa Agendada        │
-                           └──────────────────┬─────────────────┘
-                                              │
-                                              ▼
-                           ┌────────────────────────────────────┐
-                           │   Agendador de Tarefas (SYSTEM)    │
-                           │      Execução Automática (5 min)   │
-                           └────────────────────────────────────┘
+        +-------------------+          duplo-clique / UAC
+        | INICIAR-Assistente| ---------------------------------+
+        +-------------------+                                  |
+                                                               v
+                                            +--------------------------------+
+                                            |  Launcher-Monitoramento.ps1    |
+                                            |  (assistente de implantação)   |
+                                            +--------------------------------+
+                                              |        |          |        |
+              grava/mescla                    |        |          |        | reutiliza
+        +----------------------+  <-----------+        |          |        +----------------------+
+        |  MonitorConfig.json  |  (override)           |          |        | Install-Monitor.ps1  |
+        +----------------------+                       |          |        +----------------------+
+                 ^                                      |          |                    |
+                 | lê e mescla sobre padrão             | valida   | detecta            | registra
+                 |                                      | token    | Chat ID            v
+        +----------------------+   alertas HTTPS 443   (getMe)   (getUpdates)   +------------------------+
+        |     Monitor.ps1      | --------------------------------------------->  |  Agendador (SYSTEM)    |
+        |  (agente / 5 min)    |            api.telegram.org                     |  tarefa a cada 5 min   |
+        +----------------------+                                                +------------------------+
+                 |  estado                                    ^  comandos (opcional)
+                 v                                            |
+        +----------------------+                     +----------------------+
+        |   MonitorState.json  |                     |    Monitor-Bot.ps1   |
+        |  (CPU/cooldown/boot) |                     | long-poll getUpdates |
+        +----------------------+                     +----------------------+
 ```
 
 **Princípio central de design:** o agente lê um **override externo**
@@ -396,7 +367,7 @@ Características arquiteturais:
 
 ---
 
-##  Tecnologias utilizadas
+## 🛠️ Tecnologias utilizadas
 
 - **PowerShell** (Windows PowerShell 5.1 e PowerShell 7) — linguagem do agente, do bot e do assistente.
 - **Windows Scripting (`.cmd`/Batch)** — bootstrapper de duplo-clique e scripts de preparo.
@@ -408,7 +379,7 @@ Características arquiteturais:
 
 ---
 
-##  Boas práticas
+## ✅ Boas práticas
 
 O projeto foi construído seguindo princípios que facilitam manutenção e operação:
 
@@ -423,7 +394,7 @@ O projeto foi construído seguindo princípios que facilitam manutenção e oper
 
 ---
 
-##  Roadmap
+## 🗺️ Roadmap
 
 Ideias e melhorias planejadas para versões futuras (sujeitas a evolução):
 
@@ -436,11 +407,11 @@ Ideias e melhorias planejadas para versões futuras (sujeitas a evolução):
 - [ ] Testes automatizados com **Pester** e verificação de estilo com **PSScriptAnalyzer**.
 - [ ] Internacionalização das mensagens de alerta.
 
-Sugestões são bem-vindas via [issues](https://github.com/Edsilas/VigiaBOT/issues).
+Sugestões são bem-vindas via [issues](https://github.com/edsilas/VigiaBOT/issues).
 
 ---
 
-##  Contribuição
+## 🤝 Contribuição
 
 Contribuições são bem-vindas! Consulte o guia completo em
 [**CONTRIBUTING.md**](CONTRIBUTING.md). Em resumo:
@@ -455,7 +426,16 @@ Ao contribuir, você concorda que sua contribuição será licenciada sob a
 
 ---
 
-##  Changelog
+## 📝 Changelog
+
+### Versão 1.0.1 — 2026-07-08
+
+- **Corrigido**: o robô de comandos do Telegram (`Monitor-Bot.ps1`) não
+  respondia quando os segredos eram definidos pelo modo padrão do assistente
+  ("Arquivo de configuração"). O bot agora lê o mesmo `MonitorConfig.json` do
+  agente (token, Chat IDs autorizados por união, serviços críticos e tarefa),
+  resolve o caminho do `/log` de forma robusta e entrega respostas em texto
+  simples caso o envio em HTML falhe. Sem regressões.
 
 ### Versão 1.0.0 — 2026-07-04
 
@@ -478,7 +458,7 @@ O histórico completo está em [**CHANGELOG.md**](CHANGELOG.md).
 
 ---
 
-##  Licença
+## 📄 Licença
 
 Distribuído sob a **Apache License 2.0**. Consulte o arquivo [**LICENSE**](LICENSE)
 para o texto completo.
@@ -495,7 +475,7 @@ You may obtain a copy of the License at
 
 ---
 
-##  Créditos
+## 👤 Créditos
 
 **Desenvolvido por Edsilas**
 
@@ -503,6 +483,6 @@ Se este projeto foi útil para você, considere deixar uma ⭐ no repositório.
 
 <div align="center">
 
-**VigiaBOT** — Observabilidade contínua para manter sua infraestrutura previsível. 
+**VigiaBOT** — vigiando seus servidores para que você não precise. 🛡️
 
 </div>

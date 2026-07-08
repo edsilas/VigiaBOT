@@ -5,6 +5,34 @@ Todas as mudanças relevantes deste projeto são documentadas neste arquivo.
 O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/)
 e o projeto adota o [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [1.0.1] - 2026-07-08
+
+Correção de confiabilidade do robô de comandos do Telegram, sem alteração ou
+remoção de funcionalidades existentes (sem regressões).
+
+### Corrigido
+
+- **Robô de comandos do Telegram** (`Monitor-Bot.ps1`) não respondia quando os
+  segredos eram definidos pelo modo padrão do assistente ("Arquivo de
+  configuração"). O bot lia o token apenas da variável de ambiente
+  `MONITOR_TG_TOKEN` (ou do valor inline) e ignorava o `MonitorConfig.json`,
+  ao contrário do `Monitor.ps1`. Nessa situação o bot iniciava sem token
+  válido e encerrava, enquanto os alertas do monitor continuavam funcionando.
+  Agora o bot lê o mesmo `MonitorConfig.json` e dele obtém o token, os Chat IDs
+  autorizados (por união, sem remover IDs já configurados), os serviços
+  críticos e o nome da tarefa. A variável de ambiente e os valores inline
+  continuam válidos.
+- Caminho do log lido por `/log` deixou de ser fixo em
+  `C:\Monitoramento\logs\monitor.log` e passou a ser resolvido de forma robusta
+  (a partir do `LogDir` do JSON ou do diretório de instalação real), evitando a
+  mensagem "log ainda não gerado" quando a instalação fica em outro diretório.
+- `Send-Reply` agora registra o motivo de uma recusa do Telegram e, se o envio
+  em HTML falhar, reenvia a resposta em texto simples, evitando respostas
+  perdidas silenciosamente.
+- Linha de diagnóstico no início do log do bot indicando a origem da
+  configuração (JSON, variável de ambiente ou inline) e o caminho do log do
+  monitor, para facilitar o suporte.
+
 ## [1.0.0] - 2026-07-04
 
 Primeira versão pública do **VigiaBOT**. Consolida o agente de monitoramento,
@@ -65,4 +93,5 @@ em um único projeto documentado e pronto para uso em campo.
 - Código do agente independente de idioma do SO (contadores CIM/WMI) e sem
   dependências externas.
 
-[1.0.0]: https://github.com/Edsilas/VigiaBOT/releases/tag/v1.0.0
+[1.0.1]: https://github.com/edsilas/VigiaBOT/releases/tag/v1.0.1
+[1.0.0]: https://github.com/edsilas/VigiaBOT/releases/tag/v1.0.0
