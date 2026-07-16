@@ -1,5 +1,3 @@
-<div align="center">
-
 # VigiaBOT
 
 Monitoramento de servidores Windows com alertas via Telegram e um assistente
@@ -11,8 +9,6 @@ apenas quando algo foge do esperado.
 [![Versão](https://img.shields.io/badge/vers%C3%A3o-1.0.2-green.svg)](CHANGELOG.md)
 [![PowerShell](https://img.shields.io/badge/PowerShell-5.1%20%7C%207-5391FE.svg)](#requisitos)
 [![Windows](https://img.shields.io/badge/Windows-10%2F11%20%7C%20Server%202012R2--2022-0078D6.svg)](#requisitos)
-
-</div>
 
 ---
 
