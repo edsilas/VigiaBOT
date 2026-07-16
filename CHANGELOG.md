@@ -5,6 +5,24 @@ Todas as mudanças relevantes deste projeto são documentadas neste arquivo.
 O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/)
 e o projeto adota o [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [1.0.2] - 2026-07-15
+
+Correção no cálculo de uso de CPU por processo, sem alteração de funcionalidades.
+
+### Corrigido
+
+- **Uso de CPU por processo podia ultrapassar 100%** (por exemplo, `191.8%`
+  em um alerta `PROC_CPU_ALTA`). O cálculo dividia o tempo de CPU consumido por
+  um intervalo fixo de 1000 ms, presumindo que a coleta durava exatamente 1
+  segundo. Em servidores sobrecarregados, a enumeração dos processos leva mais
+  que isso, então o tempo real decorrido era maior que o presumido e o
+  percentual ficava inflado. Agora o agente usa um cronômetro monotônico e mede
+  o tempo real decorrido por processo, e o valor é limitado a 100%.
+- Proteção adicional na leitura da CPU total (`_Total`), garantindo que o valor
+  reportado nunca exceda 100%.
+- A detecção de CPU total sustentada e todas as demais verificações permanecem
+  inalteradas (sem regressões).
+
 ## [1.0.1] - 2026-07-08
 
 Correção de confiabilidade do robô de comandos do Telegram, sem alteração ou
@@ -93,5 +111,6 @@ em um único projeto documentado e pronto para uso em campo.
 - Código do agente independente de idioma do SO (contadores CIM/WMI) e sem
   dependências externas.
 
+[1.0.2]: https://github.com/edsilas/VigiaBOT/releases/tag/v1.0.2
 [1.0.1]: https://github.com/edsilas/VigiaBOT/releases/tag/v1.0.1
 [1.0.0]: https://github.com/edsilas/VigiaBOT/releases/tag/v1.0.0

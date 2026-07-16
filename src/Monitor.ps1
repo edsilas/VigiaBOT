@@ -306,7 +306,9 @@ function Get-CpuUsagePercent {
         if ($i -lt 2) { Start-Sleep -Milliseconds 800 }
     }
     if ($vals.Count -eq 0) { return $null }
-    return [math]::Round(($vals | Measure-Object -Average).Average, 1)
+    $avg = ($vals | Measure-Object -Average).Average
+    if ($avg -gt 100) { $avg = 100 }   # protecao: _Total nunca deve passar de 100%
+    return [math]::Round($avg, 1)
 }
 
 function Get-OsInfoCached {
@@ -519,12 +521,18 @@ function Test-DatabaseFailure {
 function Test-ProcessResourceHogs {
     $cores = Get-LogicalCoresCached
 
-    # --- CPU por processo: delta de TotalProcessorTime em ~1s ---
+    # --- CPU por processo: delta de TotalProcessorTime sobre o tempo REAL decorrido ---
+    # Usa um cronometro monotonico e mede o tempo real entre as duas amostras de
+    # cada processo. Em servidores sobrecarregados, enumerar os processos pode
+    # levar bem mais que 1s; dividir por um intervalo fixo de 1000ms inflava o
+    # percentual (podendo passar de 100%). Aqui o divisor e o tempo real decorrido
+    # e o valor e limitado a 100% (um processo nao usa mais que a capacidade total).
+    $sw    = [System.Diagnostics.Stopwatch]::StartNew()
     $snap1 = @{}
     Get-Process -ErrorAction SilentlyContinue | ForEach-Object {
         try {
             $t = $_.TotalProcessorTime
-            if ($null -ne $t) { $snap1[$_.Id] = $t.TotalMilliseconds }
+            if ($null -ne $t) { $snap1[$_.Id] = @{ Cpu = $t.TotalMilliseconds; At = $sw.Elapsed.TotalMilliseconds } }
         } catch { }   # System/Idle/protegidos nao expoem tempo de CPU
     }
     Start-Sleep -Milliseconds 1000
@@ -532,11 +540,16 @@ function Test-ProcessResourceHogs {
         try {
             $t = $_.TotalProcessorTime
             if ($snap1.ContainsKey($_.Id) -and $null -ne $t) {
-                $deltaMs = $t.TotalMilliseconds - $snap1[$_.Id]
-                $pct = [math]::Round(($deltaMs / (1000.0 * $cores)) * 100, 1)
-                if ($pct -ge $script:Config.ProcCpuThreshold) {
-                    Add-Alert -Type 'PROC_CPU_ALTA' -Severity 'Alto' -Process "$($_.ProcessName) (PID $($_.Id))" `
-                              -Value "$pct% CPU" -Key "PCPU_$($_.Id)"
+                $prev      = $snap1[$_.Id]
+                $deltaMs   = $t.TotalMilliseconds - $prev.Cpu
+                $elapsedMs = $sw.Elapsed.TotalMilliseconds - $prev.At
+                if ($elapsedMs -gt 0 -and $deltaMs -ge 0) {
+                    $pct = [math]::Round(($deltaMs / ($elapsedMs * $cores)) * 100, 1)
+                    if ($pct -gt 100) { $pct = 100.0 }   # protecao: nunca acima de 100%
+                    if ($pct -ge $script:Config.ProcCpuThreshold) {
+                        Add-Alert -Type 'PROC_CPU_ALTA' -Severity 'Alto' -Process "$($_.ProcessName) (PID $($_.Id))" `
+                                  -Value "$pct% CPU" -Key "PCPU_$($_.Id)"
+                    }
                 }
             }
         } catch { }
