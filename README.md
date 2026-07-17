@@ -120,31 +120,67 @@ assistente nunca precisa editar o código do agente — ele apenas grava esse
 arquivo. O resultado é compatibilidade total e atualizações seguras.
 
 ```
-+-------------------------------------------------------------+
-|                                                             |
-|  [ Launcher ] grava -->  [ MonitorConfig.json ]             |
-|                          (limiares + segredos)              |
-|                                                             |
-+-------------------------------------------------------------+
-          ^                                       ^
-          | lê a cada 5 min                       | lê ao iniciar
-          |                                       |
-+-------------------+                   +-------------------+
-|    Monitor.ps1    |                   |  Monitor-Bot.ps1  |
-+-------------------+                   +-------------------+
-          |                                       ^
-          | envia alerta                          | recebe comandos
-          | (HTTPS 443)                           | (/status, /log)
-          v                                       |
-+-------------------------------------------------------------+
-|                      api.telegram.org                       |
-+-------------------------------------------------------------+
-          |                                       ^
-          | entrega alerta                        | envia comandos
-          v                                       |
-+-------------------------------------------------------------+
-|                   Seu Telegram (Celular)                    |
-+-------------------------------------------------------------+
+┌──────────────────────────────────────────────────────────────┐
+│                          Launcher                            │
+│                                                              │
+│  Responsável por gravar configurações                        │
+│                                                              │
+└──────────────────────────────┬───────────────────────────────┘
+                               │
+                               ▼
+┌──────────────────────────────────────────────────────────────┐
+│                      MonitorConfig.json                      │
+│                                                              │
+│  Contém:                                                     │
+│  • Limiares de monitoramento                                 │ 
+│  • Configurações do sistema                                  │
+│  • Segredos / Tokens                                         │
+│                                                              │
+└───────────────────────┬───────────────────────┬──────────────┘
+                        │                       │
+                        │                       │
+        Lê a cada 5 min │                       │ Lê ao iniciar
+                        │                       │
+                        ▼                       ▼
+┌────────────────────────────┐       ┌────────────────────────────┐
+│        Monitor.ps1         │       │       Monitor-Bot.ps1      │
+│                            │       │                            │
+│ • Executa monitoramento    │       │ • Executa bot Telegram     │
+│ • Consulta configurações   │       │ • Recebe comandos          │
+│ • Avalia limiares          │       │ • Processa solicitações    │
+│ • Detecta eventos          │       │                            │
+│ • Envia alertas            │       │ Comandos:                  │
+│                            │       │ • /status                  │
+│                            │       │ • /log                     │
+└───────────────┬────────────┘       └──────────────▲─────────────┘
+                │                                   │
+                │                                   │
+                │ Envia alerta                      │ Recebe comandos
+                │ HTTPS (porta 443)                 │
+                │                                   │
+                ▼                                   │
+┌──────────────────────────────────────────────────────────────┐
+│                      api.telegram.org                        │
+│                                                              │
+│  API oficial de comunicação Telegram                         │
+│                                                              │
+│  • Recebe alertas enviados pelo Monitor.ps1                  │
+│  • Entrega comandos enviados pelo usuário                    │
+│                                                              │
+└───────────────────────┬──────────────────────────────────────┘
+                        │
+                        │ Entrega alertas
+                        │
+                        ▼
+┌──────────────────────────────────────────────────────────────┐
+│                    Telegram do Usuário                       │
+│                                                              │
+│    Celular                                                   │
+│                                                              │
+│  • Recebe alertas do monitoramento                           │
+│  • Envia comandos para o bot                                 │
+│                                                              │
+└──────────────────────────────────────────────────────────────┘
 ```
 
 ### Fluxo de funcionamento
@@ -153,47 +189,101 @@ O Agendador de Tarefas do Windows dispara o agente a cada 5 minutos. Cada
 execução é independente e curta: coleta, compara, decide e encerra.
 
 ```
-+--------------------------+
-|   Agendador de Tarefas   |
-+--------------------------+
-             |
-             | (A cada 5 min ou Boot)
-             v
-+--------------------------+
-|       Monitor.ps1        |
-+--------------------------+
-             |
-             v
-    1. Lê MonitorConfig.json
-       (limiares, serviços, token, Chat ID)
-             |
-             v
-    2. Coleta métricas via CIM/WMI
-       (CPU, RAM, disco, rede, serviços, eventos)
-             |
-             v
-    3. Compara com os limiares
-             |
-             +----------------------------------+
-             |                                  |
-      [ Algo Anormal ]                   [ Nada Anormal ]
-             |                                  |
-             v                                  v
-    4. Consulta o cooldown               Grava log e encerra.
-       em monitor-state.json
-             |
-             +----------------------------------+
-             |                                  |
-    [ Fora do Cooldown ]               [ Ainda em Cooldown ]
-             |                                  |
-             v                                  v
-    5. Monta a mensagem e                Não repete o alerta.
-       envia via HTTPS 443 
-       para o Telegram
-             |
-             v
-    6. Atualiza monitor-state.json 
-       e grava monitor.log
+┌──────────────────────────────────────────┐
+│          Agendador de Tarefas            │
+│                                          │
+│  Execução:                               │
+│  • A cada 5 minutos                      │
+│  • Na inicialização (Boot)               │
+└────────────────────┬─────────────────────┘
+                     │
+                     ▼
+┌──────────────────────────────────────────┐
+│              Monitor.ps1                 │
+│                                          │
+│  Script principal de monitoramento       │
+└────────────────────┬─────────────────────┘
+                     │
+                     ▼
+┌──────────────────────────────────────────┐
+│  1. Carrega MonitorConfig.json           │
+│                                          │
+│  Contém:                                 │
+│  • Limiares de alerta                    │
+│  • Serviços monitorados                  │
+│  • Token Telegram                        │
+│  • Chat ID                               │
+└────────────────────┬─────────────────────┘
+                     │
+                     ▼
+┌──────────────────────────────────────────┐
+│  2. Coleta de métricas do sistema        │
+│                                          │
+│  Fonte: CIM / WMI                        │
+│                                          │
+│  Dados coletados:                        │
+│  • CPU                                   │
+│  • Memória RAM                           │
+│  • Disco                                 │
+│  • Rede                                  │
+│  • Serviços                              │
+│  • Eventos do sistema                    │
+└────────────────────┬─────────────────────┘
+                     │
+                     ▼
+┌──────────────────────────────────────────┐
+│  3. Comparação com os limiares definidos │
+└────────────────────┬─────────────────────┘
+                     │
+          ┌──────────┴──────────┐
+          │                     │
+          ▼                     ▼
+┌───────────────────┐   ┌────────────────────┐
+│  Algo Anormal     │   │  Nada Anormal      │
+└─────────┬─────────┘   └─────────┬──────────┘
+          │                       │
+          ▼                       ▼
+┌───────────────────┐   ┌────────────────────┐
+│  4. Consulta      │   │  Grava log e       │
+│  cooldown em      │   │  encerra execução  │
+│ monitor-state.json│   │                    │
+└─────────┬─────────┘   └────────────────────┘
+          │
+          ▼
+      ┌───────────────┐
+      │ Verificação   │
+      │ do cooldown   │
+      └───────┬───────┘
+              │
+      ┌───────┴────────┐
+      │                │
+      ▼                ▼
+┌───────────────┐  ┌──────────────────┐
+│ Fora do       │  │ Ainda em         │
+│ cooldown      │  │ cooldown         │
+└──────┬────────┘  └────────┬─────────┘
+       │                    │
+       ▼                    ▼
+┌───────────────────┐  ┌──────────────────┐
+│ 5. Monta alerta   │  │ Não repete       │
+│                   │  │ o alerta         │
+│ Envia via HTTPS   │  │                  │
+│ porta 443         │  │                  │
+│                   │  │                  │
+│ Destino:          │  │                  │
+│ Telegram          │  │                  │
+└─────────┬─────────┘  └──────────────────┘
+          │
+          ▼
+┌──────────────────────────────────────────┐
+│ 6. Atualização de estado e logs          │
+│                                          │
+│  Atualiza:                               │
+│  • monitor-state.json                    │
+│                                          │
+│  Registra:                               │
+│  • monitor.log                           │
+└──────────────────────────────────────────┘
 ```
 
 ### Função de cada diretório
