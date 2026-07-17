@@ -153,28 +153,47 @@ O Agendador de Tarefas do Windows dispara o agente a cada 5 minutos. Cada
 execução é independente e curta: coleta, compara, decide e encerra.
 
 ```
-[Agendador de Tarefas] --(5 min / boot)--> [Monitor.ps1]
-        |
-        v
-  1. Le MonitorConfig.json (limiares, serviços, token, Chat ID)
-        v
-  2. Coleta metricas via CIM/WMI (CPU, RAM, disco, rede, serviços, eventos)
-        v
-  3. Compara com os limiares
-        |
-        +-- nada anormal --> grava log e encerra
-        |
-        +-- algo anormal
-                v
-  4. Consulta o cooldown em monitor-state.json
-        |
-        +-- ainda em cooldown --> nao repete o alerta
-        |
-        +-- fora do cooldown
-                v
-  5. Monta a mensagem e envia via HTTPS 443 para o Telegram
-        v
-  6. Atualiza monitor-state.json e grava monitor.log
++--------------------------+
+|   Agendador de Tarefas   |
++--------------------------+
+             |
+             | (A cada 5 min ou Boot)
+             v
++--------------------------+
+|       Monitor.ps1        |
++--------------------------+
+             |
+             v
+    1. Lê MonitorConfig.json
+       (limiares, serviços, token, Chat ID)
+             |
+             v
+    2. Coleta métricas via CIM/WMI
+       (CPU, RAM, disco, rede, serviços, eventos)
+             |
+             v
+    3. Compara com os limiares
+             |
+             +----------------------------------+
+             |                                  |
+      [ Algo Anormal ]                   [ Nada Anormal ]
+             |                                  |
+             v                                  v
+    4. Consulta o cooldown               Grava log e encerra.
+       em monitor-state.json
+             |
+             +----------------------------------+
+             |                                  |
+    [ Fora do Cooldown ]               [ Ainda em Cooldown ]
+             |                                  |
+             v                                  v
+    5. Monta a mensagem e                Não repete o alerta.
+       envia via HTTPS 443 
+       para o Telegram
+             |
+             v
+    6. Atualiza monitor-state.json 
+       e grava monitor.log
 ```
 
 ### Função de cada diretório
