@@ -1,55 +1,69 @@
 # VigiaBOT
 
-Monitoramento de servidores Windows com alertas via Telegram e assistente interativo de implantação. O agente roda como tarefa agendada na conta `SYSTEM`, coleta indicadores a cada 5 minutos e avisa apenas quando algo foge do esperado.
+Monitoramento de servidores Windows com alertas via Telegram e assistente
+interativo de implantação. O agente roda como tarefa agendada na conta `SYSTEM`,
+coleta indicadores a cada 5 minutos e avisa apenas quando algo foge do esperado.
 
-![Licença](https://img.shields.io/badge/licen%C3%A7a-Apache%202.0-blue.svg)
-
-![Versão](https://img.shields.io/badge/vers%C3%A3o-1.0.2-green.svg)
-
-![PowerShell](https://img.shields.io/badge/PowerShell-5.1%20%7C%207-5391FE.svg)
-
-![Windows](https://img.shields.io/badge/Windows-10%2F11%20%7C%20Server%202012R2--2022-0078D6.svg)
+[![Licença](https://img.shields.io/badge/licen%C3%A7a-Apache%202.0-blue.svg)](LICENSE) [![Versão](https://img.shields.io/badge/vers%C3%A3o-1.0.2-green.svg)](CHANGELOG.md) [![PowerShell](https://img.shields.io/badge/PowerShell-5.1%20%7C%207-5391FE.svg)](#requisitos) [![Windows](https://img.shields.io/badge/Windows-10%2F11%20%7C%20Server%202012R2--2022-0078D6.svg)](#requisitos)
 
 ---
 
 ## Sumário
 
 | Seção | Conteúdo |
-| --- | --- |
-| [Visão geral](#vis%C3%A3o-geral) | O que é e como funciona |
+|-------|----------|
+| [Visão geral](#visão-geral) | O que é e como funciona |
 | [Funcionalidades](#funcionalidades) | O que é monitorado |
 | [Requisitos](#requisitos) | Condições mínimas |
-| [Início rápido](#in%C3%ADcio-r%C3%A1pido) | Instalação em 3 passos |
-| [Arquitetura da solução](#arquitetura-da-solu%C3%A7%C3%A3o) | Fluxos, componentes e dados |
-| [Guia de utilização](#guia-de-utiliza%C3%A7%C3%A3o) | 15 tópicos passo a passo |
-| [Boas práticas e recomendações](#boas-pr%C3%A1ticas-e-recomenda%C3%A7%C3%B5es) | Recomendações de uso |
+| [Início rápido](#início-rápido) | Instalação em 3 passos |
+| [Arquitetura da solução](#arquitetura-da-solução) | Fluxos, componentes e dados |
+| [Guia de utilização](#guia-de-utilização) | 15 tópicos passo a passo |
+| [Boas práticas e recomendações](#boas-práticas-e-recomendações) | Recomendações de uso |
 | [Roadmap](#roadmap) | Próximos passos |
-| [Contribuição](#contribui%C3%A7%C3%A3o) | Como colaborar |
+| [Contribuição](#contribuição) | Como colaborar |
 | [Changelog](#changelog) | Histórico de versões |
-| [Licença](#licen%C3%A7a) · [Créditos](#cr%C3%A9ditos) | Projeto |
+| [Licença](#licença) · [Créditos](#créditos) | Projeto |
 
-Atalhos do guia: [1. Pré-requisitos](#1-pr%C3%A9-requisitos) · [2. Instalação](#2-instala%C3%A7%C3%A3o) · [3. Primeira execução](#3-primeira-execu%C3%A7%C3%A3o) · [4. Diretórios](#4-estrutura-de-diret%C3%B3rios) · [5. Configuração](#5-arquivo-de-configura%C3%A7%C3%A3o) · [6. Servidores](#6-como-cadastrar-servidores) · [7. Telegram](#7-como-configurar-o-telegram) · [8. Alertas](#8-como-configurar-os-alertas) · [9. Iniciar](#9-como-iniciar-o-monitoramento) · [10. Parar](#10-como-parar-o-servi%C3%A7o) · [11. Atualizar](#11-como-atualizar-a-ferramenta) · [12. Logs](#12-como-visualizar-logs) · [13. Interpretar alertas](#13-como-interpretar-os-alertas) · [14. Manutenção](#14-como-realizar-manuten%C3%A7%C3%A3o) · [15. Desinstalar](#15-como-desinstalar)
+Atalhos do guia:
+[1. Pré-requisitos](#1-pré-requisitos) ·
+[2. Instalação](#2-instalação) ·
+[3. Primeira execução](#3-primeira-execução) ·
+[4. Diretórios](#4-estrutura-de-diretórios) ·
+[5. Configuração](#5-arquivo-de-configuração) ·
+[6. Servidores](#6-como-cadastrar-servidores) ·
+[7. Telegram](#7-como-configurar-o-telegram) ·
+[8. Alertas](#8-como-configurar-os-alertas) ·
+[9. Iniciar](#9-como-iniciar-o-monitoramento) ·
+[10. Parar](#10-como-parar-o-serviço) ·
+[11. Atualizar](#11-como-atualizar-a-ferramenta) ·
+[12. Logs](#12-como-visualizar-logs) ·
+[13. Interpretar alertas](#13-como-interpretar-os-alertas) ·
+[14. Manutenção](#14-como-realizar-manutenção) ·
+[15. Desinstalar](#15-como-desinstalar)
 
 ---
 
 ## Visão geral
 
-O VigiaBOT observa a saúde de um servidor Windows e avisa o responsável pelo Telegram. Não exige painéis pagos, agentes pesados ou serviços externos.
+O VigiaBOT observa a saúde de um servidor Windows e avisa o responsável pelo
+Telegram. Não exige painéis pagos, agentes pesados ou serviços externos.
 
 | Componente | Arquivo | Função |
-| --- | --- | --- |
+|------------|---------|--------|
 | Agente | `Monitor.ps1` | Coleta métricas e envia alertas. Executa a cada 5 minutos. |
 | Bot de comandos | `Monitor-Bot.ps1` | Responde a consultas no Telegram. Opcional. |
 | Assistente | `Launcher-Monitoramento.ps1` | Instala, configura e parametriza de forma guiada. |
 
-Toda a parametrização fica em um arquivo externo, o `MonitorConfig.json`, lido pelo agente a cada execução. Limiares, serviços vigiados e credenciais mudam sem editar código.
+Toda a parametrização fica em um arquivo externo, o `MonitorConfig.json`, lido
+pelo agente a cada execução. Limiares, serviços vigiados e credenciais mudam sem
+editar código.
 
 ---
 
 ## Funcionalidades
 
 | Área | O que é verificado |
-| --- | --- |
+|------|--------------------|
 | CPU | Uso total sustentado e uso por processo |
 | Memória | Percentual de RAM e consumo por processo |
 | Disco | Percentual de uso por volume |
@@ -63,31 +77,34 @@ Recursos de apoio:
 - Cooldown por tipo de alerta, evitando notificações repetidas.
 - Estado persistente entre execuções.
 - Log local com rotação automática.
-- Comandos remotos somente leitura: `/status`, `/check`, `/log`, `/servicos`, `/disco`, `/uptime`, `/help`.
+- Comandos remotos somente leitura: `/status`, `/check`, `/log`, `/servicos`,
+  `/disco`, `/uptime`, `/help`.
 
 ---
 
 ## Requisitos
 
 | Item | Requisito |
-| --- | --- |
+|------|-----------|
 | Sistema operacional | Windows Server 2012 R2 a 2022, ou Windows 10/11 |
 | PowerShell | Windows PowerShell 5.1 ou PowerShell 7 |
 | Privilégios | Administrador para instalar; a tarefa roda como `SYSTEM` |
 | Rede | Saída HTTPS para `api.telegram.org` na porta 443 |
 | Telegram | Bot criado no [@BotFather](https://t.me/BotFather) e o Chat ID de destino |
 
-Verificação detalhada no [passo 1](#1-pr%C3%A9-requisitos).
+Verificação detalhada no [passo 1](#1-pré-requisitos).
 
 ---
 
 ## Início rápido
 
 1. Baixe o projeto no servidor: `git clone https://github.com/edsilas/VigiaBOT.git`
-2. Abra a pasta `src` e dê duplo-clique em `INICIAR-Assistente.cmd` (a elevação via UAC é solicitada automaticamente).
+2. Abra a pasta `src` e dê duplo-clique em `INICIAR-Assistente.cmd` (a elevação
+   via UAC é solicitada automaticamente).
 3. No menu, escolha a opção **1 — Implantação Expressa** e siga as instruções.
 
-Ao final, uma mensagem de teste chega no seu Telegram. O passo a passo completo está no [guia de utilização](#guia-de-utiliza%C3%A7%C3%A3o).
+Ao final, uma mensagem de teste chega no seu Telegram. O passo a passo completo
+está no [guia de utilização](#guia-de-utilização).
 
 ---
 
@@ -95,7 +112,9 @@ Ao final, uma mensagem de teste chega no seu Telegram. O passo a passo completo 
 
 ### Princípio central
 
-O agente lê um arquivo de configuração externo e o aplica sobre seus valores padrão. O assistente nunca edita o código do agente: ele apenas grava esse arquivo. Isso garante compatibilidade total e atualizações seguras.
+O agente lê um arquivo de configuração externo e o aplica sobre seus valores
+padrão. O assistente nunca edita o código do agente: ele apenas grava esse
+arquivo. Isso garante compatibilidade total e atualizações seguras.
 
 ### Fluxo de implantação
 
@@ -128,7 +147,8 @@ flowchart TB
 
 ### Ciclo de execução do agente
 
-O Agendador dispara o agente a cada 5 minutos. Cada execução é curta e independente: lê, coleta, compara, decide e encerra.
+O Agendador dispara o agente a cada 5 minutos. Cada execução é curta e
+independente: lê, coleta, compara, decide e encerra.
 
 ```mermaid
 flowchart TB
@@ -202,7 +222,7 @@ flowchart TB
 ### Responsabilidade de cada arquivo
 
 | Arquivo | Responsabilidade |
-| --- | --- |
+|---------|------------------|
 | `Monitor.ps1` | Núcleo. Coleta métricas, aplica limiares e envia alertas. |
 | `Monitor-Bot.ps1` | Escuta comandos do Telegram e responde consultas, somente leitura. |
 | `Install-Monitor.ps1` | Registra, remove ou testa a tarefa agendada do agente. |
@@ -216,7 +236,7 @@ flowchart TB
 ### Função de cada diretório
 
 | Diretório | Função |
-| --- | --- |
+|-----------|--------|
 | `src/` | Tudo o que é copiado para o servidor. Os arquivos devem permanecer juntos: são localizados por caminho relativo. |
 | `docs/` | Manuais e guias de apoio. Não interfere na execução. |
 | Raiz | Metadados do projeto: licença, changelog e guia de contribuição. |
@@ -224,7 +244,7 @@ flowchart TB
 ### Relacionamento entre os componentes
 
 | Origem | Destino | Interação |
-| --- | --- | --- |
+|--------|---------|-----------|
 | Assistente | `MonitorConfig.json` | Grava limiares e credenciais |
 | Assistente | Agendador de Tarefas | Registra as tarefas do agente e do bot |
 | `Monitor.ps1` | `MonitorConfig.json` | Lê a configuração a cada execução |
@@ -243,15 +263,22 @@ flowchart TB
 
 ## Guia de utilização
 
-Este guia foi escrito para quem nunca usou a ferramenta. Cada comando vem acompanhado do motivo pelo qual é executado, do que ele faz e do que esperar depois. Recomenda-se a instalação pelo assistente; os comandos manuais existem para quem preferir controle total.
+Este guia foi escrito para quem nunca usou a ferramenta. Cada comando vem
+acompanhado do motivo pelo qual é executado, do que ele faz e do que esperar
+depois. Recomenda-se a instalação pelo assistente; os comandos manuais existem
+para quem preferir controle total.
 
-> Convenção: sempre que aparecer "PowerShell como Administrador", significa clicar com o botão direito no menu Iniciar, escolher "Windows PowerShell (Admin)" ou "Terminal (Admin)" e responder "Sim" à janela de permissão (UAC).
+> Convenção: sempre que aparecer "PowerShell como Administrador", significa
+> clicar com o botão direito no menu Iniciar, escolher "Windows PowerShell
+> (Admin)" ou "Terminal (Admin)" e responder "Sim" à janela de permissão (UAC).
 
 ### 1. Pré-requisitos
 
 **Objetivo:** garantir que o servidor atende às condições mínimas antes de instalar.
 
-**Explicação:** o VigiaBOT usa apenas recursos nativos do Windows. Você só precisa confirmar a versão do PowerShell, ter direitos de administrador e uma saída de internet para o Telegram.
+**Explicação:** o VigiaBOT usa apenas recursos nativos do Windows. Você só
+precisa confirmar a versão do PowerShell, ter direitos de administrador e uma
+saída de internet para o Telegram.
 
 **Comandos de verificação** (PowerShell como Administrador):
 
@@ -284,44 +311,55 @@ TcpTestSucceeded : True
 
 **Solução de erros comuns:**
 
-- `TcpTestSucceeded : False`: a porta 443 está bloqueada. Libere a saída no firewall/proxy da rede ou use o passo [Preparar ambiente](#9-como-iniciar-o-monitoramento).
-- Versão do PowerShell inferior a 5.1: atualize o Windows Management Framework ou instale o PowerShell 7.
+- `TcpTestSucceeded : False`: a porta 443 está bloqueada. Libere a saída no
+  firewall/proxy da rede ou use o passo [Preparar ambiente](#9-como-iniciar-o-monitoramento).
+- Versão do PowerShell inferior a 5.1: atualize o Windows Management Framework
+  ou instale o PowerShell 7.
 
 ### 2. Instalação
 
 **Objetivo:** colocar os arquivos no servidor e iniciar o assistente.
 
-**Explicação:** basta copiar a pasta do projeto para o servidor e executar um único atalho. O assistente cuida do restante.
+**Explicação:** basta copiar a pasta do projeto para o servidor e executar um
+único atalho. O assistente cuida do restante.
 
 **Passos:**
 
-1. Baixe o projeto (botão "Code" no GitHub ou `git clone`) e copie a pasta para o servidor, por exemplo em `C:\Instaladores\VigiaBOT`.
+1. Baixe o projeto (botão "Code" no GitHub ou `git clone`) e copie a pasta para
+   o servidor, por exemplo em `C:\Instaladores\VigiaBOT`.
 
    ```bash
    git clone https://github.com/edsilas/VigiaBOT.git
    ```
 
 2. Abra a pasta `src`.
-
 3. Dê **duplo-clique** em `INICIAR-Assistente.cmd`.
 
-**O que esperar:** uma janela de permissão do Windows (UAC) aparece; clique em "Sim". Em seguida abre o menu do assistente.
+**O que esperar:** uma janela de permissão do Windows (UAC) aparece; clique em
+"Sim". Em seguida abre o menu do assistente.
 
 **Observações importantes:**
 
-- Mantenha todos os arquivos de `src` juntos, na mesma pasta. Eles dependem disso para funcionar.
-- Você não precisa alterar a política de execução do Windows manualmente; o atalho já executa o assistente de forma isolada e segura.
+- Mantenha todos os arquivos de `src` juntos, na mesma pasta. Eles dependem
+  disso para funcionar.
+- Você não precisa alterar a política de execução do Windows manualmente; o
+  atalho já executa o assistente de forma isolada e segura.
 
 **Solução de erros comuns:**
 
-- A janela abre e fecha na hora: execute pela linha de comando para ver a mensagem — abra o PowerShell como Administrador na pasta `src` e rode `powershell -ExecutionPolicy Bypass -File .\Launcher-Monitoramento.ps1`.
-- "Este arquivo veio de outro computador" (bloqueio do Windows): clique com o botão direito no arquivo, Propriedades, marque "Desbloquear" e aplique.
+- A janela abre e fecha na hora: execute pela linha de comando para ver a
+  mensagem — abra o PowerShell como Administrador na pasta `src` e rode
+  `powershell -ExecutionPolicy Bypass -File .\Launcher-Monitoramento.ps1`.
+- "Este arquivo veio de outro computador" (bloqueio do Windows): clique com o
+  botão direito no arquivo, Propriedades, marque "Desbloquear" e aplique.
 
 ### 3. Primeira execução
 
 **Objetivo:** deixar o monitoramento funcionando de ponta a ponta na primeira vez.
 
-**Explicação:** no menu do assistente, a opção 1 (Implantação Expressa) executa todas as etapas em sequência: prepara o ambiente, configura o Telegram, sugere os limiares, instala a tarefa e envia uma mensagem de teste.
+**Explicação:** no menu do assistente, a opção 1 (Implantação Expressa) executa
+todas as etapas em sequência: prepara o ambiente, configura o Telegram,
+sugere os limiares, instala a tarefa e envia uma mensagem de teste.
 
 **Menu do assistente:**
 
@@ -338,9 +376,12 @@ TcpTestSucceeded : True
 [0] Sair
 ```
 
-**Passo a passo:** digite `1` e tecle Enter. Siga as instruções na tela: informe o token do bot e envie uma mensagem ao seu bot quando solicitado (o assistente lê o Chat ID sozinho).
+**Passo a passo:** digite `1` e tecle Enter. Siga as instruções na tela: informe
+o token do bot e envie uma mensagem ao seu bot quando solicitado (o assistente
+lê o Chat ID sozinho).
 
-**O que esperar:** ao final, você recebe uma mensagem de teste no Telegram confirmando que tudo está funcionando.
+**O que esperar:** ao final, você recebe uma mensagem de teste no Telegram
+confirmando que tudo está funcionando.
 
 **Observações importantes:**
 
@@ -349,14 +390,16 @@ TcpTestSucceeded : True
 
 **Solução de erros comuns:**
 
-- Não chega mensagem de teste: verifique o token (passo 7) e se você enviou pelo menos uma mensagem ao bot antes da detecção do Chat ID.
+- Não chega mensagem de teste: verifique o token (passo 7) e se você enviou pelo
+  menos uma mensagem ao bot antes da detecção do Chat ID.
 - Erro de conectividade: refaça o passo 1 e, se necessário, a opção 4 do menu.
 
 ### 4. Estrutura de diretórios
 
 **Objetivo:** saber onde ficam os arquivos após a instalação.
 
-**Explicação:** por padrão, o assistente instala tudo em `C:\Monitoramento`. É lá que ficam a configuração, o estado e os logs.
+**Explicação:** por padrão, o assistente instala tudo em `C:\Monitoramento`.
+É lá que ficam a configuração, o estado e os logs.
 
 ```
 C:\Monitoramento\
@@ -374,20 +417,25 @@ C:\Monitoramento\
 
 **Observações importantes:**
 
-- `MonitorConfig.json` pode conter o token do Telegram. A pasta é restrita a administradores; não copie esse arquivo para locais públicos nem para o Git.
-- Os logs giram automaticamente quando atingem o tamanho máximo, então não crescem indefinidamente.
+- `MonitorConfig.json` pode conter o token do Telegram. A pasta é restrita a
+  administradores; não copie esse arquivo para locais públicos nem para o Git.
+- Os logs giram automaticamente quando atingem o tamanho máximo, então não
+  crescem indefinidamente.
 
 **Solução de erros comuns:**
 
-- A pasta não existe: a instalação não foi concluída. Reabra o assistente e use a opção 5 (Instalar tarefa) ou a opção 1 (Implantação Expressa).
+- A pasta não existe: a instalação não foi concluída. Reabra o assistente e use
+  a opção 5 (Instalar tarefa) ou a opção 1 (Implantação Expressa).
 
 ### 5. Arquivo de configuração
 
 **Objetivo:** entender e ajustar o `MonitorConfig.json`.
 
-**Explicação:** este arquivo define como o agente se comporta. O agente lê os valores padrão internos e aplica por cima o que estiver nesse arquivo. Você só precisa colocar aquilo que quiser mudar.
+**Explicação:** este arquivo define como o agente se comporta. O agente lê os
+valores padrão internos e aplica por cima o que estiver nesse arquivo. Você só
+precisa colocar aquilo que quiser mudar.
 
-**Exemplo de** `MonitorConfig.json`**:**
+**Exemplo de `MonitorConfig.json`:**
 
 ```json
 {
@@ -404,7 +452,7 @@ C:\Monitoramento\
 **Parâmetros mais usados:**
 
 | Parâmetro | Padrão | O que controla |
-| --- | --- | --- |
+|-----------|:------:|----------------|
 | `CpuThreshold` | 80 | Percentual de CPU que dispara alerta |
 | `CpuSustainMinutes` | 5 | Minutos sustentados acima do limiar antes de alertar |
 | `RamThreshold` | 80 | Percentual de memória RAM |
@@ -417,26 +465,35 @@ C:\Monitoramento\
 
 **Observações importantes:**
 
-- Após alterar limiares, não é preciso reiniciar nada: o agente relê o arquivo na próxima execução (no máximo 5 minutos depois).
+- Após alterar limiares, não é preciso reiniciar nada: o agente relê o arquivo
+  na próxima execução (no máximo 5 minutos depois).
 - Use aspas duplas e vírgulas corretas; é um arquivo JSON.
 
 **Solução de erros comuns:**
 
-- O agente parou de alertar após uma edição: o JSON provavelmente está inválido. Valide-o (por exemplo, colando em um validador de JSON) e corrija vírgulas ou aspas. Em caso de dúvida, use a opção 3 do assistente para regenerá-lo.
+- O agente parou de alertar após uma edição: o JSON provavelmente está inválido.
+  Valide-o (por exemplo, colando em um validador de JSON) e corrija vírgulas ou
+  aspas. Em caso de dúvida, use a opção 3 do assistente para regenerá-lo.
 
 ### 6. Como cadastrar servidores
 
 **Objetivo:** entender o modelo de vários servidores.
 
-**Explicação:** o VigiaBOT é um agente por servidor. Não existe um cadastro central: cada servidor roda a sua própria cópia e envia alertas para o Telegram. Para monitorar vários servidores, instale a ferramenta em cada um deles.
+**Explicação:** o VigiaBOT é um agente por servidor. Não existe um cadastro
+central: cada servidor roda a sua própria cópia e envia alertas para o Telegram.
+Para monitorar vários servidores, instale a ferramenta em cada um deles.
 
-**Como identificar de qual servidor veio o alerta:** toda mensagem inclui o nome da máquina (COMPUTERNAME). Assim você distingue os servidores mesmo usando o mesmo Telegram.
+**Como identificar de qual servidor veio o alerta:** toda mensagem inclui o nome
+da máquina (COMPUTERNAME). Assim você distingue os servidores mesmo usando o
+mesmo Telegram.
 
 **Recomendações para vários servidores:**
 
-- Use o mesmo bot do Telegram para todos e um grupo como destino, ou um Chat ID por equipe. O nome da máquina no alerta identifica a origem.
+- Use o mesmo bot do Telegram para todos e um grupo como destino, ou um Chat ID
+  por equipe. O nome da máquina no alerta identifica a origem.
 - Repita a instalação (passos 2 e 3) em cada servidor.
-- Se quiser padronizar limiares, copie o mesmo `MonitorConfig.json` para cada servidor (sem os segredos, se preferir defini-los por variável de ambiente).
+- Se quiser padronizar limiares, copie o mesmo `MonitorConfig.json` para cada
+  servidor (sem os segredos, se preferir defini-los por variável de ambiente).
 
 **Observações importantes:**
 
@@ -447,19 +504,26 @@ C:\Monitoramento\
 
 **Objetivo:** criar o bot, obter o token e o Chat ID de destino.
 
-**Explicação:** o Telegram entrega os alertas. Você precisa de um "bot" (criado gratuitamente) e do identificador do destino (seu usuário ou um grupo).
+**Explicação:** o Telegram entrega os alertas. Você precisa de um "bot" (criado
+gratuitamente) e do identificador do destino (seu usuário ou um grupo).
 
 **Passo a passo:**
 
-1. No Telegram, abra o [@BotFather](https://t.me/BotFather) e envie `/newbot`. Siga as instruções e guarde o **token** informado (algo como `123456789:AAE...`).
-2. Envie uma mensagem qualquer ao seu novo bot (isso é necessário para o passo seguinte).
-3. No assistente, escolha a opção 2 (Configurar Telegram), informe o token e deixe a **detecção automática** ler o seu Chat ID.
+1. No Telegram, abra o [@BotFather](https://t.me/BotFather) e envie `/newbot`.
+   Siga as instruções e guarde o **token** informado (algo como
+   `123456789:AAE...`).
+2. Envie uma mensagem qualquer ao seu novo bot (isso é necessário para o passo
+   seguinte).
+3. No assistente, escolha a opção 2 (Configurar Telegram), informe o token e
+   deixe a **detecção automática** ler o seu Chat ID.
 
-**Configuração manual (alternativa):** coloque o token e o Chat ID diretamente no `MonitorConfig.json` (ver [passo 5](#5-arquivo-de-configura%C3%A7%C3%A3o)).
+**Configuração manual (alternativa):** coloque o token e o Chat ID diretamente
+no `MonitorConfig.json` (ver [passo 5](#5-arquivo-de-configuração)).
 
 **Observações importantes:**
 
-- Para enviar a um grupo, adicione o bot ao grupo e envie uma mensagem lá antes da detecção; os IDs de grupo são números negativos.
+- Para enviar a um grupo, adicione o bot ao grupo e envie uma mensagem lá antes
+  da detecção; os IDs de grupo são números negativos.
 - O token é uma credencial sensível. Trate-o como uma senha.
 
 **Solução de erros comuns:**
@@ -471,7 +535,9 @@ C:\Monitoramento\
 
 **Objetivo:** ajustar quando e sobre o que você quer ser avisado.
 
-**Explicação:** os alertas são controlados pelos limiares e pela lista de serviços no `MonitorConfig.json`. A opção 3 do assistente sugere valores com base no hardware do servidor.
+**Explicação:** os alertas são controlados pelos limiares e pela lista de
+serviços no `MonitorConfig.json`. A opção 3 do assistente sugere valores com
+base no hardware do servidor.
 
 **Duas formas de configurar:**
 
@@ -482,22 +548,28 @@ Manual:                    editar MonitorConfig.json (ver passo 5)
 
 **Recomendações práticas:**
 
-- Em servidores de banco de dados, inclua o serviço do banco em `CriticalServices` (por exemplo, `MSSQLSERVER`).
-- Em servidores com muitos serviços que iniciam sob demanda, considere `MonitorAutoStopped: false` para reduzir ruído.
-- Aumente `AlertCooldownMin` se estiver recebendo alertas repetidos com muita frequência.
+- Em servidores de banco de dados, inclua o serviço do banco em
+  `CriticalServices` (por exemplo, `MSSQLSERVER`).
+- Em servidores com muitos serviços que iniciam sob demanda, considere
+  `MonitorAutoStopped: false` para reduzir ruído.
+- Aumente `AlertCooldownMin` se estiver recebendo alertas repetidos com muita
+  frequência.
 
 **Observações importantes:**
 
 - Mudanças de limiar valem na próxima execução do agente (até 5 minutos).
-- Mudanças que afetam o bot (por exemplo, serviços críticos) exigem reiniciar a tarefa do bot (ver [passo 10](#10-como-parar-o-servi%C3%A7o)).
+- Mudanças que afetam o bot (por exemplo, serviços críticos) exigem reiniciar a
+  tarefa do bot (ver [passo 10](#10-como-parar-o-serviço)).
 
 ### 9. Como iniciar o monitoramento
 
 **Objetivo:** registrar (ou reativar) a tarefa que executa o agente a cada 5 minutos.
 
-**Explicação:** o monitoramento é uma tarefa agendada. Instalá-la faz o Windows executar o agente automaticamente, mesmo sem ninguém logado.
+**Explicação:** o monitoramento é uma tarefa agendada. Instalá-la faz o Windows
+executar o agente automaticamente, mesmo sem ninguém logado.
 
-**Pela via recomendada:** no assistente, use a opção 5 (Instalar / atualizar tarefa). Se ainda não preparou o ambiente, use antes a opção 4.
+**Pela via recomendada:** no assistente, use a opção 5 (Instalar / atualizar
+tarefa). Se ainda não preparou o ambiente, use antes a opção 4.
 
 **Comandos manuais** (PowerShell como Administrador, na pasta de instalação):
 
@@ -528,14 +600,17 @@ SUCCESS: Attempted to run the scheduled task "MonitoramentoServidor".
 
 **Solução de erros comuns:**
 
-- "Access is denied": você não está como Administrador. Reabra o PowerShell com "Executar como administrador".
+- "Access is denied": você não está como Administrador. Reabra o PowerShell com
+  "Executar como administrador".
 - A tarefa não aparece: confirme o nome com `schtasks /Query /TN MonitoramentoServidor`.
 
 ### 10. Como parar o serviço
 
 **Objetivo:** pausar temporariamente o monitoramento ou o bot.
 
-**Explicação:** o agente é disparado por uma tarefa; o bot roda continuamente. Você pode desativar a tarefa do agente e encerrar o processo do bot sem desinstalar nada.
+**Explicação:** o agente é disparado por uma tarefa; o bot roda continuamente.
+Você pode desativar a tarefa do agente e encerrar o processo do bot sem
+desinstalar nada.
 
 **Comandos** (PowerShell como Administrador):
 
@@ -556,22 +631,27 @@ schtasks /End /TN MonitoramentoBotTelegram
 **Observações importantes:**
 
 - Desativar a tarefa do agente não apaga configuração nem logs.
-- O bot volta a iniciar no próximo boot, pois está agendado para iniciar com o Windows. Para impedir isso de forma permanente, desinstale (passo 15).
+- O bot volta a iniciar no próximo boot, pois está agendado para iniciar com o
+  Windows. Para impedir isso de forma permanente, desinstale (passo 15).
 
 **Solução de erros comuns:**
 
-- "The system cannot find the file specified": a tarefa não existe com esse nome. Liste as tarefas com `schtasks /Query | findstr /i Monitoramento`.
+- "The system cannot find the file specified": a tarefa não existe com esse
+  nome. Liste as tarefas com `schtasks /Query | findstr /i Monitoramento`.
 
 ### 11. Como atualizar a ferramenta
 
 **Objetivo:** aplicar uma nova versão preservando a configuração.
 
-**Explicação:** atualizar é substituir os scripts pela versão nova e reregistrar as tarefas. A configuração (`MonitorConfig.json`), o estado e os logs são preservados.
+**Explicação:** atualizar é substituir os scripts pela versão nova e reregistrar
+as tarefas. A configuração (`MonitorConfig.json`), o estado e os logs são
+preservados.
 
 **Passo a passo:**
 
 1. Baixe a nova versão do projeto.
-2. Copie os arquivos de `src` para a pasta de instalação (`C:\Monitoramento`), substituindo os antigos. **Não** substitua o `MonitorConfig.json`.
+2. Copie os arquivos de `src` para a pasta de instalação (`C:\Monitoramento`),
+   substituindo os antigos. **Não** substitua o `MonitorConfig.json`.
 3. Reregistre as tarefas:
 
 ```powershell
@@ -592,13 +672,15 @@ schtasks /Run /TN MonitoramentoBotTelegram
 
 **Solução de erros comuns:**
 
-- O bot continua com o comportamento antigo: você atualizou o arquivo mas não reiniciou a tarefa. Rode os dois comandos `schtasks /End` e `schtasks /Run`.
+- O bot continua com o comportamento antigo: você atualizou o arquivo mas não
+  reiniciou a tarefa. Rode os dois comandos `schtasks /End` e `schtasks /Run`.
 
 ### 12. Como visualizar logs
 
 **Objetivo:** acompanhar o que a ferramenta está fazendo.
 
-**Explicação:** o agente e o bot registram suas ações em arquivos de log. Você pode lê-los diretamente ou consultá-los pelo Telegram.
+**Explicação:** o agente e o bot registram suas ações em arquivos de log. Você
+pode lê-los diretamente ou consultá-los pelo Telegram.
 
 **Comandos** (PowerShell):
 
@@ -612,25 +694,29 @@ Get-Content C:\Monitoramento\logs\monitor.log -Tail 30 -Wait
 Get-Content C:\Monitoramento\logs\bot.log -Tail 30
 ```
 
-**Pelo Telegram:** envie `/log` ao bot para receber as últimas linhas do log do agente. Pelo assistente, a opção 8 (Painel de status) também exibe um resumo.
+**Pelo Telegram:** envie `/log` ao bot para receber as últimas linhas do log do
+agente. Pelo assistente, a opção 8 (Painel de status) também exibe um resumo.
 
 **Observações importantes:**
 
-- Os logs giram automaticamente ao atingir o tamanho máximo; arquivos antigos ficam com extensão `.bak`.
+- Os logs giram automaticamente ao atingir o tamanho máximo; arquivos antigos
+  ficam com extensão `.bak`.
 - Pressione `Ctrl+C` para sair do modo de acompanhamento (`-Wait`).
 
 **Solução de erros comuns:**
 
-- "log ainda não gerado" no `/log`: o agente ainda não executou ou está em outra pasta. Rode `schtasks /Run /TN MonitoramentoServidor` e aguarde um minuto.
+- "log ainda não gerado" no `/log`: o agente ainda não executou ou está em outra
+  pasta. Rode `schtasks /Run /TN MonitoramentoServidor` e aguarde um minuto.
 
 ### 13. Como interpretar os alertas
 
 **Objetivo:** entender rapidamente o que cada alerta significa.
 
-**Explicação:** os alertas indicam o tipo de problema, o valor observado e o servidor de origem. A tabela abaixo resume os principais.
+**Explicação:** os alertas indicam o tipo de problema, o valor observado e o
+servidor de origem. A tabela abaixo resume os principais.
 
 | Alerta | Significado | Primeira ação sugerida |
-| --- | --- | --- |
+|--------|-------------|------------------------|
 | CPU alta sustentada | CPU acima do limiar por vários minutos | Identificar o processo que consome CPU |
 | RAM alta | Uso de memória acima do limiar | Verificar processos e vazamentos de memória |
 | Disco cheio | Volume acima do limiar de uso | Liberar espaço no volume indicado |
@@ -650,7 +736,8 @@ Get-Content C:\Monitoramento\logs\bot.log -Tail 30
 
 **Objetivo:** manter a ferramenta saudável ao longo do tempo.
 
-**Explicação:** a manutenção é leve. Basta conferir o status periodicamente, revisar os logs e validar o envio de tempos em tempos.
+**Explicação:** a manutenção é leve. Basta conferir o status periodicamente,
+revisar os logs e validar o envio de tempos em tempos.
 
 **Rotina recomendada:**
 
@@ -673,19 +760,24 @@ schtasks /Query /TN MonitoramentoServidor /V /FO LIST
 
 **Observações importantes:**
 
-- O painel de status (opção 8 do assistente) reúne tarefas, configuração efetiva e as últimas linhas de log em um só lugar.
+- O painel de status (opção 8 do assistente) reúne tarefas, configuração
+  efetiva e as últimas linhas de log em um só lugar.
 
 **Solução de erros comuns:**
 
-- `-Test` falha no envio: revise token/Chat ID (passo 7) e a conectividade (passo 1).
+- `-Test` falha no envio: revise token/Chat ID (passo 7) e a conectividade
+  (passo 1).
 
 ### 15. Como desinstalar
 
 **Objetivo:** remover completamente o VigiaBOT do servidor.
 
-**Explicação:** a remoção retira as tarefas agendadas e, opcionalmente, as regras de firewall e as variáveis criadas. A pasta é mantida para você decidir se apaga.
+**Explicação:** a remoção retira as tarefas agendadas e, opcionalmente, as
+regras de firewall e as variáveis criadas. A pasta é mantida para você decidir
+se apaga.
 
-**Pela via recomendada:** no assistente, use a opção 9 (Remover / Rollback) e confirme as perguntas.
+**Pela via recomendada:** no assistente, use a opção 9 (Remover / Rollback) e
+confirme as perguntas.
 
 **Comandos manuais** (PowerShell como Administrador, na pasta de instalação):
 
@@ -702,23 +794,31 @@ schtasks /Delete /TN MonitoramentoBotTelegram /F
 
 **Observações importantes:**
 
-- A pasta `C:\Monitoramento` (com logs e configuração) é preservada. Apague-a manualmente se não precisar mais dos registros.
-- Se você definiu o token por variável de ambiente de máquina, a opção 9 do assistente também oferece removê-la.
+- A pasta `C:\Monitoramento` (com logs e configuração) é preservada. Apague-a
+  manualmente se não precisar mais dos registros.
+- Se você definiu o token por variável de ambiente de máquina, a opção 9 do
+  assistente também oferece removê-la.
 
 **Solução de erros comuns:**
 
-- Tarefa não encontrada ao remover: ela já foi removida ou tem outro nome. Confirme com `schtasks /Query | findstr /i Monitoramento`.
+- Tarefa não encontrada ao remover: ela já foi removida ou tem outro nome.
+  Confirme com `schtasks /Query | findstr /i Monitoramento`.
 
 ---
 
 ## Boas práticas e recomendações
 
-- Instale sempre a partir de uma conta de Administrador, para que a tarefa seja registrada corretamente na conta `SYSTEM`.
-- Prefira configurar o Telegram pelo assistente: a detecção automática do Chat ID evita erros de digitação.
-- Trate o token como uma senha. Não o compartilhe nem o inclua em capturas de tela ou repositórios.
+- Instale sempre a partir de uma conta de Administrador, para que a tarefa seja
+  registrada corretamente na conta `SYSTEM`.
+- Prefira configurar o Telegram pelo assistente: a detecção automática do Chat
+  ID evita erros de digitação.
+- Trate o token como uma senha. Não o compartilhe nem o inclua em capturas de
+  tela ou repositórios.
 - Faça um teste (`-Test`) após qualquer mudança de configuração relevante.
-- Ajuste os limiares à realidade de cada servidor; valores padrão são um ponto de partida, não uma regra fixa.
-- Em ambientes de produção, valide a instalação primeiro em um servidor de homologação.
+- Ajuste os limiares à realidade de cada servidor; valores padrão são um ponto
+  de partida, não uma regra fixa.
+- Em ambientes de produção, valide a instalação primeiro em um servidor de
+  homologação.
 - Mantenha um backup do `MonitorConfig.json` antes de atualizações maiores.
 
 ---
@@ -737,11 +837,13 @@ Sugestões são bem-vindas via [issues](https://github.com/edsilas/VigiaBOT/issu
 
 ## Contribuição
 
-Contribuições são bem-vindas. O guia completo está em [CONTRIBUTING.md](CONTRIBUTING.md). Em resumo:
+Contribuições são bem-vindas. O guia completo está em
+[CONTRIBUTING.md](CONTRIBUTING.md). Em resumo:
 
 1. Abra uma issue descrevendo o problema ou a proposta.
 2. Crie um branch a partir de `main` (`feat/...`, `fix/...`, `docs/...`).
-3. Mantenha os padrões do projeto: compatibilidade com PowerShell 5.1 e 7, scripts em ASCII e nenhum segredo no commit.
+3. Mantenha os padrões do projeto: compatibilidade com PowerShell 5.1 e 7,
+   scripts em ASCII e nenhum segredo no commit.
 4. Valide em homologação e abra um Pull Request claro, referenciando a issue.
 
 ---
@@ -750,15 +852,23 @@ Contribuições são bem-vindas. O guia completo está em [CONTRIBUTING.md](CONT
 
 ### Versão 1.0.2 — 2026-07-15
 
-- Correção no cálculo de uso de CPU por processo, que podia ultrapassar 100% em servidores sobrecarregados. O agente passou a medir o tempo real decorrido por processo (cronômetro monotônico) em vez de presumir um intervalo fixo, e o valor é limitado a 100%. Sem alteração de funcionalidades.
+- Correção no cálculo de uso de CPU por processo, que podia ultrapassar 100% em
+  servidores sobrecarregados. O agente passou a medir o tempo real decorrido por
+  processo (cronômetro monotônico) em vez de presumir um intervalo fixo, e o
+  valor é limitado a 100%. Sem alteração de funcionalidades.
 
 ### Versão 1.0.1 — 2026-07-08
 
-- Correção do robô de comandos do Telegram, que não respondia quando os segredos eram definidos pelo modo padrão do assistente. O bot passou a ler o mesmo `MonitorConfig.json` do agente, resolve o caminho do log de forma robusta e entrega respostas em texto simples caso o envio em HTML falhe. Sem regressões.
+- Correção do robô de comandos do Telegram, que não respondia quando os segredos
+  eram definidos pelo modo padrão do assistente. O bot passou a ler o mesmo
+  `MonitorConfig.json` do agente, resolve o caminho do log de forma robusta e
+  entrega respostas em texto simples caso o envio em HTML falhe. Sem regressões.
 
 ### Versão 1.0.0 — 2026-07-04
 
-- Primeira versão pública: agente de monitoramento, bot de comandos, instalador da tarefa agendada e assistente interativo de implantação, com documentação técnica completa.
+- Primeira versão pública: agente de monitoramento, bot de comandos, instalador
+  da tarefa agendada e assistente interativo de implantação, com documentação
+  técnica completa.
 
 O histórico detalhado está em [CHANGELOG.md](CHANGELOG.md).
 
@@ -766,7 +876,8 @@ O histórico detalhado está em [CHANGELOG.md](CHANGELOG.md).
 
 ## Licença
 
-Distribuído sob a Apache License 2.0. Consulte o arquivo [LICENSE](LICENSE) para o texto completo.
+Distribuído sob a Apache License 2.0. Consulte o arquivo [LICENSE](LICENSE) para
+o texto completo.
 
 ```
 Copyright © 2026 Edsilas
