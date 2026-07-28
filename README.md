@@ -4,7 +4,7 @@ Monitoramento de servidores Windows com alertas via Telegram e assistente
 interativo de implantação. O agente roda como tarefa agendada na conta `SYSTEM`,
 coleta indicadores a cada 5 minutos e avisa apenas quando algo foge do esperado.
 
-[![Licença](https://img.shields.io/badge/licen%C3%A7a-Apache%202.0-blue.svg)](LICENSE) [![Versão](https://img.shields.io/badge/vers%C3%A3o-1.0.2-green.svg)](CHANGELOG.md) [![PowerShell](https://img.shields.io/badge/PowerShell-5.1%20%7C%207-5391FE.svg)](#requisitos) [![Windows](https://img.shields.io/badge/Windows-10%2F11%20%7C%20Server%202012R2--2022-0078D6.svg)](#requisitos)
+<a href="LICENSE"><img src="https://img.shields.io/badge/licen%C3%A7a-Apache%202.0-blue.svg" alt="Licença"></a>&nbsp;<a href="CHANGELOG.md"><img src="https://img.shields.io/badge/vers%C3%A3o-1.0.2-green.svg" alt="Versão"></a>&nbsp;<a href="#requisitos"><img src="https://img.shields.io/badge/PowerShell-5.1%20%7C%207-5391FE.svg" alt="PowerShell"></a>&nbsp;<a href="#requisitos"><img src="https://img.shields.io/badge/Windows-10%2F11%20%7C%20Server%202012R2--2022-0078D6.svg" alt="Windows"></a>
 
 ---
 
