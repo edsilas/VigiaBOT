@@ -6,16 +6,16 @@ coleta indicadores a cada 5 minutos e avisa apenas quando algo foge do esperado.
 
 <p align="left">
   <a href="LICENSE">
-    <img src="https://img.shields.io/badge/License-Apache%202.0-0078D4?style=flat-square" alt="License">
+    <img src="https://img.shields.io/badge/License-Apache%202.0-0078D4?style=flat-square&logo=apache&logoColor=white" alt="License">
   </a>
   <a href="CHANGELOG.md">
-    <img src="https://img.shields.io/badge/Version-v1.0.2-107C10?style=flat-square" alt="Version">
+    <img src="https://img.shields.io/badge/Release-v1.0.2-107C10?style=flat-square&logo=github&logoColor=white" alt="Release">
   </a>
   <a href="#requisitos">
-    <img src="https://img.shields.io/badge/PowerShell-5.1%20%7C%207-5391FE?style=flat-square" alt="PowerShell">
+    <img src="https://img.shields.io/badge/Platform-Windows%2010%2F11%20%7C%20Server%202012R2--2022-0078D4?style=flat-square&logo=windows&logoColor=white" alt="Platform">
   </a>
   <a href="#requisitos">
-    <img src="https://img.shields.io/badge/Platform-Windows%2010%2F11%20%7C%20Server%202012R2--2022-0078D4?style=flat-square" alt="Platform">
+    <img src="https://img.shields.io/badge/Shell-PowerShell%205.1%20%7C%207-5391FE?style=flat-square&logo=powershell&logoColor=white" alt="PowerShell">
   </a>
 </p>
 
