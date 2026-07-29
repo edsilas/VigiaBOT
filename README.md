@@ -4,7 +4,20 @@ Monitoramento de servidores Windows com alertas via Telegram e assistente
 interativo de implantação. O agente roda como tarefa agendada na conta `SYSTEM`,
 coleta indicadores a cada 5 minutos e avisa apenas quando algo foge do esperado.
 
-<a href="LICENSE"><img src="https://img.shields.io/badge/licen%C3%A7a-Apache%202.0-blue.svg" alt="Licença"></a>&nbsp;<a href="CHANGELOG.md"><img src="https://img.shields.io/badge/vers%C3%A3o-1.0.2-green.svg" alt="Versão"></a>&nbsp;<a href="#requisitos"><img src="https://img.shields.io/badge/PowerShell-5.1%20%7C%207-5391FE.svg" alt="PowerShell"></a>&nbsp;<a href="#requisitos"><img src="https://img.shields.io/badge/Windows-10%2F11%20%7C%20Server%202012R2--2022-0078D6.svg" alt="Windows"></a>
+<p align="left">
+  <a href="LICENSE">
+    <img src="https://img.shields.io/badge/License-Apache%202.0-0078D4?style=flat-square" alt="License">
+  </a>
+  <a href="CHANGELOG.md">
+    <img src="https://img.shields.io/badge/Version-v1.0.2-107C10?style=flat-square" alt="Version">
+  </a>
+  <a href="#requisitos">
+    <img src="https://img.shields.io/badge/PowerShell-5.1%20%7C%207-5391FE?style=flat-square" alt="PowerShell">
+  </a>
+  <a href="#requisitos">
+    <img src="https://img.shields.io/badge/Platform-Windows%2010%2F11%20%7C%20Server%202012R2--2022-0078D4?style=flat-square" alt="Platform">
+  </a>
+</p>
 
 ---
 
